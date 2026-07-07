@@ -1,0 +1,142 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── CSS Variables ────────────────────────────────────────────────────────── */
+:root {
+  --bg-primary: #fff7f4;
+  --bg-secondary: #fff0f0;
+  --bg-card: #ffffff;
+  --bg-card-hover: #fff8cc;
+  --border-subtle: rgba(153, 102, 102, 0.14);
+  --border-accent: rgba(239, 159, 173, 0.42);
+  --text-primary: #2d2214;
+  --text-secondary: #705d42;
+  --text-muted: #9b8769;
+  --brand: #e99aa9;
+  --brand-light: #ffd8df;
+  --brand-dark: #b65d70;
+  --accent: #f97316;
+  --success: #15803d;
+  --warning: #d97706;
+  --danger: #dc2626;
+}
+
+/* ─── Base Reset ───────────────────────────────────────────────────────────── */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: "Plus Jakarta Sans", "Inter", "Segoe UI", system-ui, sans-serif;
+  background:
+    radial-gradient(circle at top left, rgba(255, 226, 233, 0.92) 0%, transparent 32%),
+    linear-gradient(180deg, rgba(255, 240, 243, 0.98) 0%, rgba(255, 248, 250, 1) 38%, #ffffff 100%);
+  color: var(--text-primary);
+  line-height: 1.6;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ─── Scrollbar Styling ────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-secondary); }
+::-webkit-scrollbar-thumb { background: #d7b56e; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--brand); }
+
+/* ─── Utility Classes ──────────────────────────────────────────────────────── */
+@layer components {
+  .card {
+    @apply bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl shadow-sm shadow-amber-900/5;
+  }
+
+  .card-hover {
+    @apply card transition-all duration-300 hover:border-[var(--border-accent)] hover:bg-[var(--bg-card-hover)] hover:shadow-xl hover:shadow-pink-900/10 hover:-translate-y-0.5;
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm
+           bg-brand-500 hover:bg-brand-600 text-white shadow-sm shadow-pink-900/10 transition-all duration-200
+           focus:outline-none focus:ring-2 focus:ring-brand-400/50 active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm
+           bg-white border border-[var(--border-accent)] text-brand-800 hover:bg-brand-50
+           transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-brand-400/30 active:scale-95;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium text-sm
+           text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-brand-50
+           transition-all duration-200 focus:outline-none;
+  }
+
+  .input-field {
+    @apply w-full px-5 py-4 rounded-xl bg-pink-50/70 border border-[var(--border-subtle)]
+           text-[var(--text-primary)] placeholder-[var(--text-muted)] text-sm
+           focus:outline-none focus:ring-2 focus:ring-brand-300/50 focus:border-brand-500/50
+           transition-all duration-200;
+  }
+
+  .badge {
+    @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+
+  .tag-govt    { @apply badge bg-emerald-500/15 text-emerald-700; }
+  .tag-private { @apply badge bg-sky-500/15 text-sky-700; }
+  .tag-deemed  { @apply badge bg-violet-500/15 text-violet-700; }
+  .tag-central { @apply badge bg-amber-500/20 text-amber-800; }
+
+  .skeleton {
+    @apply animate-pulse bg-gradient-to-r from-amber-100 via-white to-amber-100 rounded-lg;
+  }
+
+  .glass {
+    @apply backdrop-blur-md bg-white/80 border border-pink-100/80;
+  }
+
+  .section-heading {
+    @apply font-display text-3xl md:text-4xl text-[var(--text-primary)];
+  }
+}
+
+/* ─── Custom Animations ────────────────────────────────────────────────────── */
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fsu {
+  animation: fadeSlideUp 0.45s ease both;
+}
+
+.animate-fsu-1 { animation-delay: 0.05s; }
+.animate-fsu-2 { animation-delay: 0.1s; }
+.animate-fsu-3 { animation-delay: 0.15s; }
+.animate-fsu-4 { animation-delay: 0.2s; }
+
+/* ─── Gradient text ─────────────────────────────────────────────────────────── */
+.gradient-text {
+  background: linear-gradient(135deg, #9d570d 0%, #e79f13 48%, #f97316 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ─── Tab underline indicator ─────────────────────────────────────────────── */
+.tab-active::after {
+  content: '';
+  display: block;
+  height: 2px;
+  background: linear-gradient(90deg, #e79f13, #f97316);
+  border-radius: 1px;
+  margin-top: 4px;
+}
