@@ -81,9 +81,7 @@ const getColleges = async (req, res) => {
     const { sequelize } = require("../config/database");
 
     // ── Build WHERE clause ───────────────────────────────────────────────────
-    const where = {
-      rating: { [Op.gt]: 0 }, // Only show valid colleges
-    };
+    const where = {};
 
     // ── Search Logic (Name, Location, State, Affiliation) ─────────────────────
     const searchTerms = expandSearchTerms(search);
