@@ -83,10 +83,6 @@ const getColleges = async (req, res) => {
     // ── Build WHERE clause ───────────────────────────────────────────────────
     const where = {
       rating: { [Op.gt]: 0 }, // Only show valid colleges
-      [Op.and]: [
-        sequelize.literal('EXISTS (SELECT 1 FROM courses WHERE courses.college_id = "College".id)'),
-        sequelize.literal('EXISTS (SELECT 1 FROM placements WHERE placements.college_id = "College".id)')
-      ]
     };
 
     // ── Search Logic (Name, Location, State, Affiliation) ─────────────────────
@@ -105,7 +101,10 @@ const getColleges = async (req, res) => {
     const limitNum = Math.min(50, Math.max(1, safeInt(limit, 10))); // cap at 50 results
     const offset = (pageNum - 1) * limitNum;
 
-
+    // ── Allowed sort columns ──────────────────────────────────────────────────
+    const allowedSortCols = ["rating", "name", "nirf_rank", "established_year"];
+    const sortCol = allowedSortCols.includes(sortBy) ? sortBy : "rating";
+    const sortDir = sortOrder.toUpperCase() === "ASC" ? "ASC" : "DESC";
 
     // ── Query Database ────────────────────────────────────────────────────────
     const { count, rows } = await College.findAndCountAll({
@@ -128,7 +127,7 @@ const getColleges = async (req, res) => {
       ],
       limit: limitNum,
       offset,
-      
+      order: [[sortCol, sortDir]],
       distinct: true, 
     });
 
@@ -787,7 +786,7 @@ const searchOrFetchCollege = async (req, res) => {
         requestedUrl,
       });
 
-      if (existing && (existing.courses?.length > 0 || existing.placements?.length > 0)) {
+      if (existing) {
         return res.status(200).json({
           success: true,
           source: "database",

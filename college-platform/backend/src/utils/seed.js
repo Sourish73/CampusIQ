@@ -132,68 +132,76 @@ async function ensureSchema() {
 
 async function seedColleges(rows) {
   let inserted = 0;
-  for (const row of rows) {
-    const result = await pool.query(
-      `
-        INSERT INTO colleges (
-          id, name, location, state, college_type, rating, established_year,
-          affiliation, naac_grade, nirf_rank, website, overview, created_at, updated_at
-        )
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW(),NOW())
-        ON CONFLICT DO NOTHING
-      `,
-      [
-        intOrNull(row.college_id),
-        textOrNull(row.college_name),
-        textOrNull(row.location),
-        textOrNull(row.state),
-        normalizeCollegeType(row.college_type),
-        numberOrNull(row.rating),
-        intOrNull(row.established_year),
-        textOrNull(row.affiliation),
-        textOrNull(row.naac_grade),
-        intOrNull(row.nirf_rank),
-        textOrNull(row.website),
-        textOrNull(row.overview),
-      ]
-    );
-    inserted += result.rowCount;
+  for (let i = 0; i < rows.length; i += 50) {
+    const chunk = rows.slice(i, i + 50);
+    const results = await Promise.all(chunk.map(row => 
+      pool.query(
+        `
+          INSERT INTO colleges (
+            id, name, location, state, college_type, rating, established_year,
+            affiliation, naac_grade, nirf_rank, website, overview, created_at, updated_at
+          )
+          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,NOW(),NOW())
+          ON CONFLICT DO NOTHING
+        `,
+        [
+          intOrNull(row.college_id),
+          textOrNull(row.college_name),
+          textOrNull(row.location),
+          textOrNull(row.state),
+          normalizeCollegeType(row.college_type),
+          numberOrNull(row.rating),
+          intOrNull(row.established_year),
+          textOrNull(row.affiliation),
+          textOrNull(row.naac_grade),
+          intOrNull(row.nirf_rank),
+          textOrNull(row.website),
+          textOrNull(row.overview),
+        ]
+      )
+    ));
+    inserted += results.reduce((acc, curr) => acc + curr.rowCount, 0);
+    console.log(`Colleges inserted progress: ${inserted}`);
   }
   return inserted;
 }
 
 async function seedCutoffs(rows) {
   let inserted = 0;
-  for (const row of rows) {
-    const result = await pool.query(
-      `
-        INSERT INTO cutoffs (
-          id, college_id, college_name, location, state, college_type,
-          exam_name, course_name, degree_type, category, opening_rank, closing_rank, year, created_at, updated_at
-        )
-        VALUES (
-          $1,
-          (SELECT id FROM colleges WHERE LOWER(TRIM(name)) = LOWER(TRIM($2)) LIMIT 1),
-          $2,$3,$4,$5,$6,$7,$8,COALESCE($9, 'General'),$10,$11,$12,NOW(),NOW()
-        )
-        ON CONFLICT DO NOTHING
-      `,
-      [
-        intOrNull(row.cutoff_id),
-        textOrNull(row.college_name),
-        textOrNull(row.location),
-        textOrNull(row.state),
-        normalizeCollegeType(row.college_type),
-        textOrNull(row.exam_name),
-        textOrNull(row.course_name),
-        textOrNull(row.degree_type),
-        textOrNull(row.category),
-        intOrNull(row.opening_rank),
-        intOrNull(row.closing_rank),
-        intOrNull(row.year) || 2025,
-      ]
-    );
-    inserted += result.rowCount;
+  for (let i = 0; i < rows.length; i += 50) {
+    const chunk = rows.slice(i, i + 50);
+    const results = await Promise.all(chunk.map(row => 
+      pool.query(
+        `
+          INSERT INTO cutoffs (
+            id, college_id, college_name, location, state, college_type,
+            exam_name, course_name, degree_type, category, opening_rank, closing_rank, year, created_at, updated_at
+          )
+          VALUES (
+            $1,
+            (SELECT id FROM colleges WHERE LOWER(TRIM(name)) = LOWER(TRIM($2)) LIMIT 1),
+            $2,$3,$4,$5,$6,$7,$8,COALESCE($9, 'General'),$10,$11,$12,NOW(),NOW()
+          )
+          ON CONFLICT DO NOTHING
+        `,
+        [
+          intOrNull(row.cutoff_id),
+          textOrNull(row.college_name),
+          textOrNull(row.location),
+          textOrNull(row.state),
+          normalizeCollegeType(row.college_type),
+          textOrNull(row.exam_name),
+          textOrNull(row.course_name),
+          textOrNull(row.degree_type),
+          textOrNull(row.category),
+          intOrNull(row.opening_rank),
+          intOrNull(row.closing_rank),
+          intOrNull(row.year) || 2025,
+        ]
+      )
+    ));
+    inserted += results.reduce((acc, curr) => acc + curr.rowCount, 0);
+    console.log(`Cutoffs inserted progress: ${inserted}`);
   }
   return inserted;
 }
