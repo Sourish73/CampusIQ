@@ -1,12 +1,8 @@
-/**
- * src/api/axios.js
- * Configured Axios instance with JWT interceptors.
- * All API calls across the app should use this instance.
- */
+
 
 import axios from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
+const API_BASE_URL = "https://campusiq-4t7y.onrender.com";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
