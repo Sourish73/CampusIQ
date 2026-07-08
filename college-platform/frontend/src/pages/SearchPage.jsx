@@ -87,7 +87,8 @@ export default function SearchPage() {
       }
     } catch (err) {
       setAiResult(null);
-      setAiError(err.response?.data?.message || "Could not find that college. Try a different name.");
+      console.error("AI Search Error:", err);
+      setAiError(err.response?.data?.message || err.message || "Could not find that college. Try a different name.");
     } finally {
       setAiLoading(false);
     }

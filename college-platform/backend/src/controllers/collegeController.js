@@ -616,13 +616,19 @@ const clampRating = (value) => {
   return Math.min(5, Math.max(0, parsed));
 };
 
-const withTimeout = (promise, ms, message) =>
-  Promise.race([
-    promise,
-    new Promise((_, reject) => {
-      setTimeout(() => reject(new Error(message)), ms);
-    }),
-  ]);
+const withTimeout = (promise, ms, message) => {
+  let timerId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timerId = setTimeout(() => reject(new Error(message)), ms);
+  });
+  return Promise.race([
+    promise.finally(() => clearTimeout(timerId)),
+    timeoutPromise,
+  ]).catch(err => {
+    promise.catch(() => {}); // Prevent unhandled rejection if timeout wins
+    throw err;
+  });
+};
 
 const getExistingCollege = async (queryText, website = "") => {
   const conditions = [];
@@ -732,7 +738,7 @@ const saveGeminiCollege = async (geminiData, collegeId = null) => {
             round: intOrNull(cutoff.round),
             college_id,
           })),
-        { transaction: t }
+        { transaction: t, ignoreDuplicates: true }
       );
     }
 
