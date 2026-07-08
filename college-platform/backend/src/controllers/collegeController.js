@@ -62,9 +62,19 @@ const expandSearchTerms = (value = "") => {
 
   const normalized = trimmed.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
   const compact = normalized.replace(/\s+/g, "");
-  const aliases = SEARCH_ALIASES[compact] || SEARCH_ALIASES[normalized] || [];
+  
+  // Start with exactly what they typed, plus exact alias matches
+  const terms = new Set([trimmed, ...(SEARCH_ALIASES[compact] || []), ...(SEARCH_ALIASES[normalized] || [])]);
 
-  return Array.from(new Set([trimmed, ...aliases]));
+  // Smart acronym expansion for things like "IIT Delhi" -> "Indian Institute of Technology Delhi"
+  const upper = value.toUpperCase();
+  if (upper.includes("IIT ")) terms.add(upper.replace("IIT ", "INDIAN INSTITUTE OF TECHNOLOGY "));
+  if (upper.includes("NIT ")) terms.add(upper.replace("NIT ", "NATIONAL INSTITUTE OF TECHNOLOGY "));
+  if (upper.includes("IIIT ")) terms.add(upper.replace("IIIT ", "INDIAN INSTITUTE OF INFORMATION TECHNOLOGY "));
+  if (upper.includes("IIM ")) terms.add(upper.replace("IIM ", "INDIAN INSTITUTE OF MANAGEMENT "));
+  if (upper.includes("AIIMS ")) terms.add(upper.replace("AIIMS ", "ALL INDIA INSTITUTE OF MEDICAL SCIENCES "));
+  
+  return Array.from(terms);
 };
 
 
