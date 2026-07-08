@@ -2,7 +2,7 @@
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const GEMINI_MODEL = "gemini-flash-latest"; // Using flash-latest because user's specific API key exhausted quota for 2.0 and 2.5
+const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "missing-key");
 
 const isLikelyUrl = (value = "") => {
