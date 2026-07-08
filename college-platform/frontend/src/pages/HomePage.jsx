@@ -10,7 +10,6 @@ import {
 } from "lucide-react";
 
 const STATS = [
-  { label: "Colleges Listed",   value: "150+",    icon: GraduationCap },
   { label: "Cut-Off Accuracy",  value: "90%",     icon: TrendingUp },
   { label: "Placement Records", value: "10k+",    icon: Star },
   { label: "Exams Covered",     value: "3+",      icon: Award },
