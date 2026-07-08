@@ -6,14 +6,12 @@ const { expandSearchTerms } = require("./src/controllers/collegeController");
 const fullCollegeIncludes = [
   { model: Course, as: "courses", attributes: { exclude: ["createdAt", "updatedAt"] } },
   { model: Placement, as: "placements", attributes: { exclude: ["createdAt", "updatedAt"] }, separate: true, order: [["year", "DESC"]] },
-  { model: Cutoff, as: "cutoffs", attributes: { exclude: ["createdAt", "updatedAt"] }, separate: true, order: [["year", "DESC"], ["exam_name", "ASC"]] },
-  { model: Review, as: "reviews", attributes: { exclude: ["updatedAt"] }, separate: true, order: [["createdAt", "DESC"]], limit: 5 },
 ];
 
 async function test() {
-  const rawQuery = "VELLORE INSTITUTE OF TECHNOLOGY";
+  const rawQuery = "IIT Bombay";
   const conditions = [];
-  const searchTerms = [rawQuery.trim()];
+  const searchTerms = expandSearchTerms(rawQuery);
 
   for (const term of searchTerms) {
     const trimmed = term.trim();

@@ -1,10 +1,12 @@
 
 
 import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { collegesAPI } from "../api";
 import {
   Search, GitCompare, Brain, Bookmark, ArrowRight,
   GraduationCap, Star, TrendingUp, Users, Award,
-  ChevronRight, Zap, Shield, BarChart2, BookOpen, MessageSquare,
+  ChevronRight, Zap, Shield, BarChart2, BookOpen, MessageSquare, MapPin,
 } from "lucide-react";
 
 const STATS = [
@@ -66,6 +68,25 @@ const colorMap = {
 };
 
 export default function HomePage() {
+  const [topColleges, setTopColleges] = useState([]);
+  const [loadingTop, setLoadingTop] = useState(true);
+
+  useEffect(() => {
+    const fetchTopColleges = async () => {
+      try {
+        const { data } = await collegesAPI.getColleges({ limit: 6, sortBy: "rating", sortOrder: "DESC" });
+        if (data.success) {
+          setTopColleges(data.data.colleges || []);
+        }
+      } catch (err) {
+        console.error("Failed to fetch top colleges", err);
+      } finally {
+        setLoadingTop(false);
+      }
+    };
+    fetchTopColleges();
+  }, []);
+
   return (
     <div className="min-h-screen">
 
@@ -184,6 +205,79 @@ export default function HomePage() {
               </Link>
             );
           })}
+        </div>
+      </section>
+
+      {/* ── Top Rated Colleges ────────────────────────────────────────────── */}
+      <section className="bg-white py-20">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-4">
+            <div>
+              <h2 className="font-display text-4xl text-[var(--text-primary)] mb-3">
+                Top Rated Colleges
+              </h2>
+              <p className="text-[var(--text-muted)] max-w-lg">
+                Discover the most highly-rated institutions in our database, ranked by student feedback and placement records.
+              </p>
+            </div>
+            <Link to="/search" className="btn-secondary whitespace-nowrap">
+              View All Colleges <ArrowRight size={16} />
+            </Link>
+          </div>
+
+          {loadingTop ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="card p-6 min-h-[250px] animate-pulse">
+                  <div className="h-4 bg-amber-100/50 rounded w-1/3 mb-4"></div>
+                  <div className="h-6 bg-brand-100/50 rounded w-3/4 mb-4"></div>
+                  <div className="h-4 bg-gray-100 rounded w-1/2 mb-6"></div>
+                  <div className="flex gap-2">
+                    <div className="h-8 bg-gray-100 rounded w-20"></div>
+                    <div className="h-8 bg-gray-100 rounded w-20"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {topColleges.map((college) => (
+                <Link
+                  key={college.id}
+                  to={`/college/${college.id}`}
+                  className="card p-6 group hover:scale-[1.02] transition-all duration-300 hover:shadow-xl hover:border-brand-200 block"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-600 text-xs font-bold border border-amber-500/20">
+                      <Star size={12} className="fill-amber-500" /> {Number(college.rating).toFixed(1)}
+                    </div>
+                    {college.nirf_rank && (
+                      <span className="text-xs font-semibold text-brand-600 bg-brand-50 px-2 py-1 rounded-md">
+                        NIRF #{college.nirf_rank}
+                      </span>
+                    )}
+                  </div>
+                  
+                  <h3 className="font-semibold text-xl text-[var(--text-primary)] mb-2 group-hover:text-brand-700 transition-colors line-clamp-2">
+                    {college.name}
+                  </h3>
+                  
+                  <div className="flex items-center gap-4 text-sm text-[var(--text-muted)] mb-6">
+                    <span className="flex items-center gap-1">
+                      <MapPin size={14} className="text-brand-400" />
+                      {college.location}, {college.state}
+                    </span>
+                  </div>
+
+                  <div className="pt-4 border-t border-brand-100 flex items-center justify-between mt-auto">
+                    <span className="text-sm font-semibold text-brand-700 group-hover:translate-x-1 transition-transform flex items-center gap-1">
+                      View details <ChevronRight size={14} />
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </section>
 
