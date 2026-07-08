@@ -2,7 +2,7 @@
 
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { collegesAPI } from "../api";
+import { collegesAPI } from "../api/axios";
 import {
   Search, GitCompare, Brain, Bookmark, ArrowRight,
   GraduationCap, Star, TrendingUp, Users, Award,
