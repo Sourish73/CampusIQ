@@ -7,13 +7,14 @@ async function test() {
   if (!key) return;
   
   try {
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${key}`);
-    const data = await res.json();
-    const textModels = data.models.filter(m => m.supportedGenerationMethods.includes("generateContent")).map(m => m.name);
-    console.log("Available Text Models:");
-    console.log(textModels);
-  } catch (err) {
-    console.error(err);
+    const genAI = new (require("@google/generative-ai").GoogleGenerativeAI)(key);
+    const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+    const result = await model.generateContent("Hello, say 'API is working' if you can read this.");
+    console.log("Success! Gemini 2.0 Flash responded:");
+    console.log(result.response.text());
+  } catch (error) {
+    console.log("ERROR! Gemini 2.0 Flash failed:");
+    console.error(error.message);
   }
 }
 

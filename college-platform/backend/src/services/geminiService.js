@@ -2,7 +2,7 @@
 
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
-const GEMINI_MODEL = "gemini-2.0-flash"; // Switched to 2.0-flash because 2.5-flash is throwing 503 overloaded errors
+const GEMINI_MODEL = "gemini-flash-latest"; // Using flash-latest because user's specific API key exhausted quota for 2.0 and 2.5
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "missing-key");
 
 const isLikelyUrl = (value = "") => {
