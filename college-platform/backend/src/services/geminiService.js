@@ -265,19 +265,9 @@ const fetchCollegeFromGemini = async (query) => {
   const trimmed = sourceUrl ? raw : normalizeCollegeQuery(raw);
   const websiteText = sourceUrl ? await fetchWebsiteSnapshot(sourceUrl) : "";
 
-  const model = genAI.getGenerativeModel({
-    model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
-    generationConfig: {
-      temperature: 0.15,
-      responseMimeType: "application/json",
-    },
-  });
-
-  const result = await model.generateContent(
-    PROMPT_TEMPLATE({ query: trimmed, sourceUrl, websiteText })
-  );
-
-  const data = parseJsonResponse(result.response.text());
+  const prompt = PROMPT_TEMPLATE({ query: trimmed, sourceUrl, websiteText });
+  const text = await generateWithFallback(prompt, true);
+  const data = parseJsonResponse(text);
   if (sourceUrl && !data.website) data.website = sourceUrl;
   return data;
 };
@@ -522,19 +512,9 @@ const fetchRankPredictionsFromGemini = async ({ exam, rank, category }) => {
     throw new Error("GEMINI_API_KEY is not configured");
   }
 
-  const model = genAI.getGenerativeModel({
-    model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
-    generationConfig: {
-      temperature: 0.2,
-      responseMimeType: "application/json",
-    },
-  });
-
-  const result = await model.generateContent(
-    PREDICTOR_PROMPT({ exam, rank, category })
-  );
-
-  const data = parseJsonResponse(result.response.text());
+  const prompt = PREDICTOR_PROMPT({ exam, rank, category });
+  const text = await generateWithFallback(prompt, true);
+  const data = parseJsonResponse(text);
   return Array.isArray(data.results) ? data.results : [];
 };
 
@@ -544,23 +524,40 @@ const withTimeout = (promise, ms, message) =>
     new Promise((_, reject) => setTimeout(() => reject(new Error(message)), ms)),
   ]);
 
+const generateWithFallback = async (prompt, isJson = false) => {
+  const primaryModelName = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  const fallbackModelName = "gemini-1.5-flash";
+  
+  const generationConfig = { temperature: 0.2 };
+  if (isJson) generationConfig.responseMimeType = "application/json";
+
+  try {
+    const model = genAI.getGenerativeModel({ model: primaryModelName, generationConfig });
+    const result = await withTimeout(model.generateContent(prompt), 15000, "Primary Gemini request timed out");
+    return result.response.text();
+  } catch (error) {
+    console.warn(`[GeminiService] ${primaryModelName} failed (${error.message}). Falling back to ${fallbackModelName}...`);
+    try {
+      const fallbackModel = genAI.getGenerativeModel({ model: fallbackModelName, generationConfig });
+      const fallbackResult = await withTimeout(fallbackModel.generateContent(prompt), 15000, "Fallback Gemini request timed out");
+      return fallbackResult.response.text();
+    } catch (fallbackError) {
+      console.error(`[GeminiService] Fallback model also failed:`, fallbackError.message);
+      throw fallbackError;
+    }
+  }
+};
+
 const safeGenerateJson = async ({ prompt, fallback }) => {
   if (!process.env.GEMINI_API_KEY) {
     return { ...fallback, fallback: true, message: "Gemini API key is not configured." };
   }
 
   try {
-    const model = genAI.getGenerativeModel({
-      model: process.env.GEMINI_MODEL || "gemini-2.5-flash",
-      generationConfig: {
-        temperature: 0.2,
-        responseMimeType: "application/json",
-      },
-    });
-    const result = await withTimeout(model.generateContent(prompt), 15000, "Gemini request timed out");
-    return parseJsonResponse(result.response.text());
+    const text = await generateWithFallback(prompt, true);
+    return parseJsonResponse(text);
   } catch (error) {
-    console.warn("[GeminiService.safeGenerateJson]", error.message);
+    console.warn("[GeminiService.safeGenerateJson] Total failure:", error.message);
     return {
       ...fallback,
       fallback: true,
