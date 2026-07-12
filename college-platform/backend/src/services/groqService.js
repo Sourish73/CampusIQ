@@ -453,70 +453,7 @@ const mergeCollegeProfiles = (baseProfile = {}, aiProfile = {}) => {
   return merged;
 };
 
-const PREDICTOR_PROMPT = ({ exam, rank, category }) => `
-You are CampusIQ's Indian admission-rank predictor.
 
-The local cutoff database had no matches, so estimate likely colleges using current public knowledge.
-
-Input:
-- exam: ${exam}
-- rank: ${rank}
-- category: ${category}
-
-Return ONLY valid JSON. No markdown.
-
-Shape:
-{
-  "results": [
-    {
-      "exam_name": "JEE Advanced",
-      "course_name": "Computer Science and Engineering",
-      "category": "General",
-      "opening_rank": 2500,
-      "closing_rank": 4200,
-      "year": 2026,
-      "round": 1,
-      "chance": {
-        "label": "Good",
-        "color": "blue",
-        "description": "Reason in one sentence"
-      },
-      "rankBuffer": 1200,
-      "college": {
-        "id": null,
-        "name": "Full college name",
-        "location": "City",
-        "state": "State",
-        "rating": 4.4,
-        "college_type": "private",
-        "naac_grade": "A",
-        "nirf_rank": 25,
-        "website": "https://..."
-      }
-    }
-  ]
-}
-
-Rules:
-- Return exactly 10 realistic matches when possible.
-- Prefer colleges with the requested exam's typical ranking pattern and nearby branch names, not just the institution name.
-- Keep the output list-style and practical for a dashboard, with short branch names and college names that students can scan quickly.
-- Do not invent exact official cutoff claims; use estimated closing ranks when current official data is uncertain.
-- closing_rank must be >= the user's rank for each returned match.
-- rankBuffer = closing_rank - user's rank.
-- chance labels: Safe when buffer >= 5000, Good when >= 1500, Moderate when >= 300, Reach when below 300.
-`;
-
-const fetchRankPredictionsFromGroq = async ({ exam, rank, category }) => {
-  if (!process.env.GROQ_API_KEY) {
-    throw new Error("GROQ_API_KEY is not configured");
-  }
-
-  const prompt = PREDICTOR_PROMPT({ exam, rank, category });
-  const text = await generateWithFallback(prompt, true);
-  const data = parseJsonResponse(text);
-  return Array.isArray(data.results) ? data.results : [];
-};
 
 const withTimeout = (promise, ms, message) =>
   Promise.race([
@@ -630,7 +567,6 @@ college2: ${college2}
 
 module.exports = {
   fetchCollegeFromGroq,
-  fetchRankPredictionsFromGroq,
   fetchCollegeSummary,
   fetchCollegeReviews,
   fetchCollegeComparison,
