@@ -15,7 +15,7 @@ const getChanceObject = (buffer) => {
   }
 };
 
-const EXAMS = ["JEE Main", "JEE Advanced", "NEET UG"];
+const EXAMS = ["JEE Main", "JEE Advanced", "NEET UG", "VITEEE"];
 const EXAM_ALIASES = new Map([
   ["jee main", "JEE Main"],
   ["jee mains", "JEE Main"],
@@ -23,6 +23,7 @@ const EXAM_ALIASES = new Map([
   ["jee advance", "JEE Advanced"],
   ["neet", "NEET UG"],
   ["neet ug", "NEET UG"],
+  ["viteee", "VITEEE"],
 ]);
 
 const normalizeExamName = (value = "") => {
