@@ -11,17 +11,10 @@ import {
 const STATS = [
   { label: "Cut-Off Accuracy",  value: "90%",     icon: TrendingUp },
   { label: "Placement Records", value: "10k+",    icon: Star },
-  { label: "Exams Covered",     value: "3+",      icon: Award },
+  { label: "Exams Covered",     value: "4+",      icon: Award },
 ];
 
 const FEATURES = [
-  {
-    icon: Search,
-    title: "Advanced Search & Filter",
-    desc: "Filter by location, college type, fee range, rating, and more. Real-time search with paginated results.",
-    href: "/search",
-    color: "blue",
-  },
   {
     icon: GitCompare,
     title: "Side-by-Side Comparison",
@@ -53,9 +46,10 @@ const FEATURES = [
 ];
 
 const EXAM_CARDS = [
-  { label: "JEE Main", exam: "JEE Main", note: "Engineering predictions", desc: "Predict B.Tech admissions for NITs, IIITs, and other major state colleges based on JEE Main ranks." },
-  { label: "JEE Advanced", exam: "JEE Advanced", note: "IIT branch outcomes", desc: "Estimate your chances of securing a seat in premier Indian Institutes of Technology (IITs)." },
-  { label: "NEET UG", exam: "NEET UG", note: "Medical college chances", desc: "Predict MBBS and BDS course admissions in top government and private medical colleges." },
+  { label: "JEE Main", exam: "JEE Main", note: "Engineering predictions", desc: "Predict B.Tech admissions for NITs, IIITs, and other major state colleges based on JEE Main ranks.", color: "bg-orange-500/10 border-orange-500/20 text-orange-700", iconColor: "text-orange-600", iconBg: "bg-orange-500/10 group-hover:bg-orange-500/20" },
+  { label: "JEE Advanced", exam: "JEE Advanced", note: "IIT branch outcomes", desc: "Estimate your chances of securing a seat in premier Indian Institutes of Technology (IITs).", color: "bg-blue-500/10 border-blue-500/20 text-blue-700", iconColor: "text-blue-600", iconBg: "bg-blue-500/10 group-hover:bg-blue-500/20" },
+  { label: "NEET UG", exam: "NEET UG", note: "Medical college chances", desc: "Predict MBBS and BDS course admissions in top government and private medical colleges.", color: "bg-emerald-500/10 border-emerald-500/20 text-emerald-700", iconColor: "text-emerald-600", iconBg: "bg-emerald-500/10 group-hover:bg-emerald-500/20" },
+  { label: "VITEEE", exam: "VITEEE", note: "VIT admissions", desc: "Predict B.Tech admissions across Vellore, Chennai, AP, and Bhopal campuses.", color: "bg-purple-500/10 border-purple-500/20 text-purple-700", iconColor: "text-purple-600", iconBg: "bg-purple-500/10 group-hover:bg-purple-500/20" },
 ];
 
 const colorMap = {
@@ -132,21 +126,21 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fsu animate-fsu-4 max-w-4xl mx-auto mt-10">
-            {EXAM_CARDS.map(({ label, exam, note, desc }) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fsu animate-fsu-4 max-w-5xl mx-auto mt-10">
+            {EXAM_CARDS.map(({ label, exam, note, desc, color, iconColor, iconBg }) => (
               <Link
                 key={label}
                 to={`/predictor?exam=${encodeURIComponent(exam)}`}
-                className="group rounded-2xl border border-amber-200/50 bg-white/95 backdrop-blur-md p-6 text-left shadow-xl shadow-amber-900/5 hover:shadow-2xl hover:border-brand-300 hover:-translate-y-1 transition-all duration-300 relative overflow-hidden"
+                className={`group rounded-2xl border ${color} backdrop-blur-md p-6 text-left shadow-xl shadow-amber-900/5 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden`}
               >
-                <div className="absolute top-0 right-0 w-24 h-24 bg-brand-500/5 rounded-full blur-xl group-hover:bg-brand-500/10 transition-colors" />
+                <div className="absolute top-0 right-0 w-24 h-24 bg-white/20 rounded-full blur-xl transition-colors" />
                 <div className="flex items-center justify-between gap-2 mb-3">
-                  <span className="text-lg font-bold text-[var(--text-primary)] group-hover:text-brand-800 transition-colors">{label}</span>
-                  <div className="w-8 h-8 rounded-full bg-brand-500/10 flex items-center justify-center group-hover:bg-brand-500/20 transition-colors">
-                    <Brain size={14} className="text-brand-700 group-hover:scale-110 transition-transform" />
+                  <span className={`text-lg font-bold text-[var(--text-primary)] transition-colors`}>{label}</span>
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${iconBg}`}>
+                    <Brain size={14} className={`${iconColor} group-hover:scale-110 transition-transform`} />
                   </div>
                 </div>
-                <p className="text-xs font-semibold text-brand-700 tracking-wider uppercase mb-2">{note}</p>
+                <p className={`text-xs font-semibold ${iconColor} tracking-wider uppercase mb-2`}>{note}</p>
                 <p className="text-xs text-[var(--text-muted)] leading-relaxed">{desc}</p>
               </Link>
             ))}
