@@ -2,7 +2,7 @@
 
 const Groq = require("groq-sdk");
 
-const GROQ_MODEL = "llama3-70b-8192";
+const GROQ_MODEL = "llama-3.3-70b-versatile";
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "missing-key" });
 
 const isLikelyUrl = (value = "") => {

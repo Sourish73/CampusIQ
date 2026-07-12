@@ -99,7 +99,7 @@ const predictColleges = async (req, res) => {
       co.image_url
     FROM cutoffs c
     LEFT JOIN colleges co
-      ON LOWER(TRIM(co.name)) = LOWER(TRIM(c.college_name))
+      ON co.id = c.college_id OR (c.college_name IS NOT NULL AND LOWER(TRIM(co.name)) = LOWER(TRIM(c.college_name)))
     WHERE ${clauses.join(" AND ")}
     ORDER BY c.closing_rank ASC, c.year DESC
     LIMIT 50
