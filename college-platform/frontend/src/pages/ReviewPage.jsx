@@ -7,6 +7,8 @@ export default function ReviewPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [query, setQuery] = useState(searchParams.get("college") || "");
   const [college, setCollege] = useState(null);
+  const [aiReviews, setAiReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -25,11 +27,17 @@ export default function ReviewPage() {
 
     setLoading(true);
     setError("");
+    setAiReviews([]);
     try {
       const { data } = await collegesAPI.searchAI(trimmed);
       if (data.success) {
-        setCollege(data.data.college);
+        const foundCollege = data.data.college;
+        setCollege(foundCollege);
         setSearchParams({ college: trimmed }, { replace: true });
+
+        if (!foundCollege.reviews || foundCollege.reviews.length === 0) {
+          fetchAiReviews(foundCollege.name);
+        }
       } else {
         setCollege(null);
         setError(data.message || "Could not load review data.");
@@ -42,7 +50,29 @@ export default function ReviewPage() {
     }
   };
 
-  const reviews = college?.reviews || [];
+  const fetchAiReviews = async (collegeName) => {
+    setReviewsLoading(true);
+    try {
+      const { data } = await collegesAPI.reviewsAI(collegeName);
+      if (data.success && data.data.reviews) {
+        // Map AI format to match DB format for UI consistency
+        const formatted = data.data.reviews.map((r, i) => ({
+          id: `ai-${i}`,
+          title: r.title || "Review",
+          reviewer_name: "CampusIQ Research",
+          rating: r.rating || (data.data.sentiment === "positive" ? 4.5 : 3.5),
+          body: r.body
+        }));
+        setAiReviews(formatted);
+      }
+    } catch (err) {
+      console.error("Failed to fetch AI reviews", err);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  const reviews = college?.reviews?.length > 0 ? college.reviews : aiReviews;
 
   return (
     <div className="min-h-screen bg-pink-100/10">
@@ -129,7 +159,11 @@ export default function ReviewPage() {
 
                 <div>
                   <h3 className="font-semibold text-[var(--text-primary)] mb-3">Review summaries</h3>
-                  {reviews.length > 0 ? (
+                  {reviewsLoading ? (
+                    <div className="flex items-center gap-2 text-sm text-brand-600 py-4">
+                      <Loader2 size={16} className="animate-spin" /> Fetching latest reviews...
+                    </div>
+                  ) : reviews.length > 0 ? (
                     <div className="space-y-3">
                       {reviews.map((review) => (
                         <div key={review.id} className="rounded-2xl border border-amber-100 bg-amber-50/60 p-4">
