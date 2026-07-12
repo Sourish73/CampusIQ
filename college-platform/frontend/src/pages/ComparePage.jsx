@@ -205,7 +205,7 @@ export default function ComparePage() {
               <div className="card p-4 mb-5">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   <div>
-                    <h2 className="font-semibold text-[var(--text-primary)]">Gemini structured comparison</h2>
+                    <h2 className="font-semibold text-[var(--text-primary)]">AI structured comparison</h2>
                     <p className="text-xs text-[var(--text-muted)]">Compares the first two selected colleges.</p>
                   </div>
                   <button type="button" onClick={handleAiCompare} disabled={aiLoading} className="btn-primary text-sm">
@@ -217,7 +217,7 @@ export default function ComparePage() {
                 {aiLoading && (
                   <div className="flex items-center gap-2 py-4 text-sm text-[var(--text-muted)]">
                     <Loader2 size={16} className="animate-spin text-brand-400" />
-                    Gemini is preparing a practical comparison...
+                    AI is preparing a practical comparison...
                   </div>
                 )}
 

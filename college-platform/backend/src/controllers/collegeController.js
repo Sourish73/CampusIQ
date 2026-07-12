@@ -1,11 +1,10 @@
 
-
 "use strict";
 
 const { Op } = require("sequelize");
 const { College, Course, Placement, Cutoff, Review, SavedItem, User } = require("../models");
 const {
-  fetchCollegeFromGemini,
+  fetchCollegeFromGroq,
   fetchCollegeSummary,
   fetchCollegeReviews,
   fetchCollegeComparison,
@@ -14,7 +13,7 @@ const {
   normalizeCollegeQuery,
   buildFallbackCollegeProfile,
   mergeCollegeProfiles,
-} = require("../services/geminiService");
+} = require("../services/groqService");
 const { validationResult } = require("express-validator");
 
 
@@ -135,7 +134,10 @@ const getColleges = async (req, res) => {
       ],
       limit: limitNum,
       offset,
-      order: [[sortCol, sortDir]],
+      order: [
+        [sortCol, sortDir === "DESC" ? "DESC NULLS LAST" : "ASC NULLS LAST"],
+        ["id", "ASC"]
+      ],
       distinct: true, 
     });
 
@@ -195,24 +197,25 @@ const getCollegeById = async (req, res) => {
 
     // Dynamic enrichment if database details are missing
     if ((!college.courses || college.courses.length === 0) && (!college.placements || college.placements.length === 0)) {
-      console.log(`[Dynamic Enrichment] College "${college.name}" (ID: ${college.id}) is missing details. Querying Gemini...`);
+      const { fetchCollegeFromGroq } = require("../services/groqService");
+      console.log(`[Dynamic Enrichment] College "${college.name}" (ID: ${college.id}) is missing details. Querying Groq...`);
       try {
         let collegeData = null;
         try {
           collegeData = await withTimeout(
-            fetchCollegeFromGemini(college.name),
+            fetchCollegeFromGroq(college.name),
             15000,
             "AI dynamic college lookup timed out"
           );
         } catch (aiError) {
-          console.warn("[Dynamic Enrichment] Gemini lookup failed, using fallback:", aiError.message);
+          console.warn("[Dynamic Enrichment] Groq lookup failed, using fallback:", aiError.message);
           collegeData = await buildFallbackCollegeProfile({
             query: college.name,
             sourceUrl: college.website || "",
           });
         }
 
-        await saveGeminiCollege(collegeData, college.id);
+        await saveGroqCollege(collegeData, college.id);
         
         // Reload with the newly saved details
         college = await College.findByPk(id, {
@@ -433,10 +436,10 @@ const legacySearchOrFetchCollege = async (req, res) => {
       });
     }
  
-    // ── Step 2: Not in DB — fetch from Gemini ────────────────────────────────
+    // ── Step 2: Not in DB — fetch from Groq ────────────────────────────────
     console.log(`[AI Lookup] Fetching "${collegeName}" from the model...`);
-    const { fetchCollegeFromGemini } = require("../services/geminiService");
-    const geminiData = await fetchCollegeFromGemini(collegeName);
+    const { fetchCollegeFromGroq } = require("../services/groqService");
+    const groqData = await fetchCollegeFromGroq(collegeName);
  
     // ── Step 3: Save to DB so next search is instant ─────────────────────────
     const { sequelize } = require("../config/database");
@@ -650,25 +653,25 @@ const getExistingCollege = async (queryText, website = "") => {
   });
 };
 
-const saveGeminiCollege = async (geminiData, collegeId = null) => {
+const saveGroqCollege = async (groqData, collegeId = null) => {
   const { sequelize } = require("../config/database");
   const isUpdate = !!collegeId;
 
   return sequelize.transaction(async (t) => {
     const payload = {
-      name: geminiData.name || "Unknown College",
-      location: geminiData.location || "Unknown",
-      state: geminiData.state || "Unknown",
-      rating: clampRating(geminiData.rating),
-      college_type: allowedCollegeTypes.has(geminiData.college_type) ? geminiData.college_type : "private",
-      established_year: intOrNull(geminiData.established_year),
-      affiliation: geminiData.affiliation || null,
-      naac_grade: geminiData.naac_grade || null,
-      nirf_rank: intOrNull(geminiData.nirf_rank),
-      total_intake: intOrNull(geminiData.total_intake),
-      website: geminiData.website || null,
-      image_url: geminiData.image_url || "",
-      overview: geminiData.overview || null,
+      name: groqData.name || "Unknown College",
+      location: groqData.location || "Unknown",
+      state: groqData.state || "Unknown",
+      rating: clampRating(groqData.rating),
+      college_type: allowedCollegeTypes.has(groqData.college_type) ? groqData.college_type : "private",
+      established_year: intOrNull(groqData.established_year),
+      affiliation: groqData.affiliation || null,
+      naac_grade: groqData.naac_grade || null,
+      nirf_rank: intOrNull(groqData.nirf_rank),
+      total_intake: intOrNull(groqData.total_intake),
+      website: groqData.website || null,
+      image_url: groqData.image_url || "",
+      overview: groqData.overview || null,
     };
 
     let college;
@@ -688,9 +691,9 @@ const saveGeminiCollege = async (geminiData, collegeId = null) => {
 
     const college_id = college.id;
 
-    if (Array.isArray(geminiData.courses) && geminiData.courses.length) {
+    if (Array.isArray(groqData.courses) && groqData.courses.length) {
       await Course.bulkCreate(
-        geminiData.courses
+        groqData.courses
           .filter((course) => course?.name)
           .map((course) => ({
             name: course.name,
@@ -706,9 +709,9 @@ const saveGeminiCollege = async (geminiData, collegeId = null) => {
       );
     }
 
-    if (Array.isArray(geminiData.placements) && geminiData.placements.length) {
+    if (Array.isArray(groqData.placements) && groqData.placements.length) {
       await Placement.bulkCreate(
-        geminiData.placements
+        groqData.placements
           .filter((placement) => intOrNull(placement?.year))
           .map((placement) => ({
             year: intOrNull(placement.year),
@@ -724,9 +727,9 @@ const saveGeminiCollege = async (geminiData, collegeId = null) => {
       );
     }
 
-    if (Array.isArray(geminiData.cutoffs) && geminiData.cutoffs.length) {
+    if (Array.isArray(groqData.cutoffs) && groqData.cutoffs.length) {
       await Cutoff.bulkCreate(
-        geminiData.cutoffs
+        groqData.cutoffs
           .filter((cutoff) => cutoff?.exam_name && intOrNull(cutoff?.closing_rank))
           .map((cutoff) => ({
             exam_name: cutoff.exam_name,
@@ -742,9 +745,9 @@ const saveGeminiCollege = async (geminiData, collegeId = null) => {
       );
     }
 
-    if (Array.isArray(geminiData.reviews) && geminiData.reviews.length) {
+    if (Array.isArray(groqData.reviews) && groqData.reviews.length) {
       await Review.bulkCreate(
-        geminiData.reviews.map((review) => ({
+        groqData.reviews.map((review) => ({
           reviewer_name: review.reviewer_name || "CampusIQ Research",
           batch_year: intOrNull(review.batch_year),
           rating: clampRating(review.rating),
@@ -772,8 +775,7 @@ const searchOrFetchCollege = async (req, res) => {
     if (!name || !name.trim()) {
       return res.status(400).json({
         success: false,
-        message:
-          "Query param `name` is required. Example: ?name=NIT Trichy or ?name=https://www.iitb.ac.in",
+        message: "Query param `name` is required. Example: ?name=NIT Trichy",
       });
     }
 
@@ -781,35 +783,31 @@ const searchOrFetchCollege = async (req, res) => {
     const requestedUrl = isLikelyUrl(rawQuery) ? normalizeUrl(rawQuery) : "";
     const queryText = requestedUrl ? rawQuery : normalizeCollegeQuery(rawQuery);
 
+    // 1. Database FIRST Lookup
+    const existing = await findCollegeInDatabase({ rawQuery, requestedUrl });
+
+    if (existing) {
+      return res.status(200).json({
+        success: true,
+        source: "database",
+        message: `"${existing.name}" loaded from database.`,
+        data: { college: existing },
+      });
+    }
+
+    // 2. Fallback to Gemini if completely unknown
     let collegeData = null;
     let source = "ai_enriched";
 
     try {
-      console.log(`[AI Lookup] Fetching "${queryText}" from Gemini...`);
+      console.log(`[AI Lookup] Fetching "${queryText}" from Groq...`);
       collegeData = await withTimeout(
-        fetchCollegeFromGemini(queryText),
+        fetchCollegeFromGroq(queryText),
         15000,
         "AI college lookup timed out"
       );
     } catch (aiError) {
-      console.warn("[CollegeController.searchOrFetchCollege] AI lookup failed, checking DB fallback:", aiError.message);
-      
-      // Fallback 1: Look up database
-      const existing = await findCollegeInDatabase({
-        rawQuery,
-        requestedUrl,
-      });
-
-      if (existing) {
-        return res.status(200).json({
-          success: true,
-          source: "database",
-          message: `"${existing.name}" loaded from database.`,
-          data: { college: existing },
-        });
-      }
-
-      // Fallback 2: Generate fallback profile with realistic details (NOT N/A or empty/black columns)
+      console.warn("[CollegeController.searchOrFetchCollege] AI lookup failed, using mock data:", aiError.message);
       collegeData = await buildFallbackCollegeProfile({
         query: queryText,
         sourceUrl: requestedUrl,
@@ -817,15 +815,13 @@ const searchOrFetchCollege = async (req, res) => {
       source = "web_lookup_fallback";
     }
 
-    const matchedCollege = await getExistingCollege(collegeData.name, collegeData.website || requestedUrl);
-    const statusCode = matchedCollege ? 200 : 201;
-    const savedCollegeId = await saveGeminiCollege(collegeData, matchedCollege?.id || null);
+    const savedCollegeId = await saveGroqCollege(collegeData, null);
 
     const fullCollege = await College.findByPk(savedCollegeId, {
       include: fullCollegeIncludes,
     });
 
-    return res.status(statusCode).json({
+    return res.status(201).json({
       success: true,
       source,
       message: `"${fullCollege.name}" profile loaded.`,
@@ -833,7 +829,6 @@ const searchOrFetchCollege = async (req, res) => {
     });
   } catch (error) {
     console.error("[CollegeController.searchOrFetchCollege]", error);
-
     return res.status(500).json({
       success: false,
       message: "College search failed.",

@@ -115,15 +115,17 @@ export default function CollegeCard({ college, onCompare, isInCompare, onSave, i
                 key={s}
                 size={12}
                 className={
-                  s <= Math.round(parseFloat(college.rating))
+                  s <= Math.round(parseFloat(college.rating || 0))
                     ? "text-amber-400 fill-amber-400"
                     : "text-amber-100 fill-amber-100"
                 }
               />
             ))}
           </div>
-          <span className="text-sm font-semibold text-amber-400">{parseFloat(college.rating).toFixed(1)}</span>
-          <span className="text-xs text-[var(--text-muted)]">/ 5.0</span>
+          <span className="text-sm font-semibold text-amber-400">
+            {college.rating ? parseFloat(college.rating).toFixed(1) : "Unrated"}
+          </span>
+          {college.rating && <span className="text-xs text-[var(--text-muted)]">/ 5.0</span>}
         </div>
 
         {/* ── Key stats row ─────────────────────────────────────────────── */}
@@ -168,22 +170,16 @@ export default function CollegeCard({ college, onCompare, isInCompare, onSave, i
         )}
 
         {/* ── CTA ──────────────────────────────────────────────────────── */}
-        <Link
-          to={`/college/${college.id}`}
-          className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold
-                     bg-brand-50 text-brand-800 border border-brand-200
-                     hover:bg-brand-100 hover:border-brand-400 transition-all duration-200"
-        >
-          View Details <ExternalLink size={13} />
-        </Link>
-
-        <div className="grid grid-cols-2 gap-2 mt-2">
+        <div className="mt-auto space-y-2">
           <Link
-            to={`/reviews?college=${encodeURIComponent(college.name)}`}
-            className="flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold bg-white text-[var(--text-secondary)] border border-amber-200 hover:text-[var(--text-primary)] hover:border-brand-400 transition-all"
+            to={`/college/${college.id}`}
+            className="flex items-center justify-center gap-2 w-full py-2.5 rounded-xl text-sm font-semibold
+                       bg-brand-50 text-brand-800 border border-brand-200
+                       hover:bg-brand-100 hover:border-brand-400 transition-all duration-200"
           >
-            Reviews
+            View Details <ExternalLink size={13} />
           </Link>
+
           {college.website ? (
             <a
               href={college.website}

@@ -1,9 +1,9 @@
 "use strict";
 
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const Groq = require("groq-sdk");
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.5-flash";
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "missing-key");
+const GROQ_MODEL = "llama3-70b-8192";
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "missing-key" });
 
 const isLikelyUrl = (value = "") => {
   const trimmed = value.trim();
@@ -255,9 +255,9 @@ const parseJsonResponse = (text) => {
   return JSON.parse(cleaned.slice(start, end + 1));
 };
 
-const fetchCollegeFromGemini = async (query) => {
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error("GEMINI_API_KEY is not configured");
+const fetchCollegeFromGroq = async (query) => {
+  if (!process.env.GROQ_API_KEY) {
+    throw new Error("GROQ_API_KEY is not configured");
   }
 
   const raw = query.trim();
@@ -507,9 +507,9 @@ Rules:
 - chance labels: Safe when buffer >= 5000, Good when >= 1500, Moderate when >= 300, Reach when below 300.
 `;
 
-const fetchRankPredictionsFromGemini = async ({ exam, rank, category }) => {
-  if (!process.env.GEMINI_API_KEY) {
-    throw new Error("GEMINI_API_KEY is not configured");
+const fetchRankPredictionsFromGroq = async ({ exam, rank, category }) => {
+  if (!process.env.GROQ_API_KEY) {
+    throw new Error("GROQ_API_KEY is not configured");
   }
 
   const prompt = PREDICTOR_PROMPT({ exam, rank, category });
@@ -525,32 +525,31 @@ const withTimeout = (promise, ms, message) =>
   ]);
 
 const generateWithFallback = async (prompt, isJson = false) => {
-  const primaryModelName = process.env.GEMINI_MODEL || "gemini-2.5-flash";
-  const fallbackModelName = "gemini-1.5-flash";
-  
-  const generationConfig = { temperature: 0.2 };
-  if (isJson) generationConfig.responseMimeType = "application/json";
+  const modelName = GROQ_MODEL;
 
   try {
-    const model = genAI.getGenerativeModel({ model: primaryModelName, generationConfig });
-    const result = await withTimeout(model.generateContent(prompt), 15000, "Primary Gemini request timed out");
-    return result.response.text();
+    const chatCompletion = await groq.chat.completions.create({
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      model: modelName,
+      temperature: 0.2,
+      response_format: isJson ? { type: "json_object" } : { type: "text" },
+    });
+    
+    return chatCompletion.choices[0]?.message?.content || "";
   } catch (error) {
-    console.warn(`[GeminiService] ${primaryModelName} failed (${error.message}). Falling back to ${fallbackModelName}...`);
-    try {
-      const fallbackModel = genAI.getGenerativeModel({ model: fallbackModelName, generationConfig });
-      const fallbackResult = await withTimeout(fallbackModel.generateContent(prompt), 15000, "Fallback Gemini request timed out");
-      return fallbackResult.response.text();
-    } catch (fallbackError) {
-      console.error(`[GeminiService] Fallback model also failed:`, fallbackError.message);
-      throw fallbackError;
-    }
+    console.warn(`[GroqService] ${modelName} failed:`, error.message);
+    throw error;
   }
 };
 
 const safeGenerateJson = async ({ prompt, fallback }) => {
-  if (!process.env.GEMINI_API_KEY) {
-    return { ...fallback, fallback: true, message: "Gemini API key is not configured." };
+  if (!process.env.GROQ_API_KEY) {
+    return { ...fallback, fallback: true, message: "Groq API key is not configured." };
   }
 
   try {
@@ -630,8 +629,8 @@ college2: ${college2}
   });
 
 module.exports = {
-  fetchCollegeFromGemini,
-  fetchRankPredictionsFromGemini,
+  fetchCollegeFromGroq,
+  fetchRankPredictionsFromGroq,
   fetchCollegeSummary,
   fetchCollegeReviews,
   fetchCollegeComparison,

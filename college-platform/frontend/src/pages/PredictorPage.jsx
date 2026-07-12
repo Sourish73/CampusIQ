@@ -5,7 +5,7 @@ import { collegesAPI, predictorAPI } from "../api/axios";
 
 const CATEGORIES = ["General", "OBC"];
 
-const EXAM_CHOICES = ["JEE Main", "JEE Advanced", "NEET UG"];
+const EXAM_CHOICES = ["JEE Main", "JEE Advanced", "NEET UG", "VITEEE"];
 
 const CHANCE_TONE = {
   Safe: "text-emerald-700 bg-emerald-500/10 border-emerald-500/20",

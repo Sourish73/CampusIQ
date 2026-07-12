@@ -1,7 +1,7 @@
 "use strict";
 
 const pool = require("../config/db");
-const { fetchRankPredictionsFromGemini } = require("../services/geminiService");
+const { fetchRankPredictionsFromGroq } = require("../services/groqService");
 
 const getChanceObject = (buffer) => {
   if (buffer >= 5000) {
