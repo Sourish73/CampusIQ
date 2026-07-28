@@ -68,7 +68,7 @@ export default function HomePage() {
   useEffect(() => {
     const fetchTopColleges = async () => {
       try {
-        const { data } = await collegesAPI.getColleges({ limit: 30, sortBy: "rating", sortOrder: "DESC" });
+        const { data } = await collegesAPI.getAll({ limit: 30, sortBy: "rating", sortOrder: "DESC" });
         if (data.success) {
           setTopColleges(data.data.colleges || []);
         }
