@@ -7,10 +7,9 @@ const pool = require("./db");
 
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
     dialect: "postgres",
-    logging:
-      process.env.NODE_ENV === "development"
-        ? (msg) => console.log(`[SQL] ${msg}`)
-        : false,
+
+    logging: false,
+
     dialectOptions:
       process.env.NODE_ENV === "production"
         ? {
@@ -20,12 +19,14 @@ const sequelize = new Sequelize(process.env.DATABASE_URL, {
             },
           }
         : {},
+
     pool: {
       max: 10,
       min: 0,
       acquire: 30000,
       idle: 10000,
     },
+    
     define: {
       underscored: true,
       timestamps: true,

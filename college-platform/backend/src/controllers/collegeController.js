@@ -8,13 +8,14 @@ const {
   fetchCollegeSummary,
   fetchCollegeReviews,
   fetchCollegeComparison,
-  isLikelyUrl,
-  normalizeUrl,
   normalizeCollegeQuery,
   buildFallbackCollegeProfile,
   mergeCollegeProfiles,
 } = require("../services/groqService");
+
 const { validationResult } = require("express-validator");
+
+ const { sequelize } = require("../config/database");
 
 
 const buildPaginationMeta = (total, page, limit) => ({
@@ -25,6 +26,36 @@ const buildPaginationMeta = (total, page, limit) => ({
   hasNextPage: page * limit < total,
   hasPrevPage: page > 1,
 });
+
+const numberOrNull = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const intOrNull = (value) => {
+  const parsed = parseInt(value, 10);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const clampRating = (value) => {
+  const parsed = numberOrNull(value);
+  if (parsed === null) return 0;
+  return Math.min(5, Math.max(0, parsed));
+};
+
+const withTimeout = (promise, ms, message) => {
+  let timerId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timerId = setTimeout(() => reject(new Error(message)), ms);
+  });
+  return Promise.race([
+    promise.finally(() => clearTimeout(timerId)),
+    timeoutPromise,
+  ]).catch(err => {
+    promise.catch(() => {}); 
+    throw err;
+  });
+};
 
 
 const safeInt = (val, fallback) => {
@@ -62,10 +93,10 @@ const expandSearchTerms = (value = "") => {
   const normalized = trimmed.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
   const compact = normalized.replace(/\s+/g, "");
   
-  // Start with exactly what they typed, plus exact alias matches
+  
   const terms = new Set([trimmed, ...(SEARCH_ALIASES[compact] || []), ...(SEARCH_ALIASES[normalized] || [])]);
 
-  // Smart acronym expansion for things like "IIT Delhi" -> "Indian Institute of Technology Delhi"
+ 
   const upper = value.toUpperCase();
   if (upper.includes("IIT ")) terms.add(upper.replace("IIT ", "INDIAN INSTITUTE OF TECHNOLOGY "));
   if (upper.includes("NIT ")) terms.add(upper.replace("NIT ", "NATIONAL INSTITUTE OF TECHNOLOGY "));
@@ -86,14 +117,13 @@ const getColleges = async (req, res) => {
       sortBy = "rating",
       sortOrder = "DESC",
     } = req.query;
-
-    const { sequelize } = require("../config/database");
-
-    // ── Build WHERE clause ───────────────────────────────────────────────────
+  
     const where = {};
 
-    // ── Search Logic (Name, Location, State, Affiliation) ─────────────────────
+ 
     const searchTerms = expandSearchTerms(search);
+
+    //BUILDIMG WHERE CLAUSE
     if (searchTerms.length) {
       where[Op.or] = searchTerms.flatMap((term) => [
         { name: { [Op.iLike]: `%${term}%` } },
@@ -103,17 +133,15 @@ const getColleges = async (req, res) => {
       ]);
     }
 
-    // ── Pagination ───────────────────────────────────────────────────────────
+   
     const pageNum = Math.max(1, safeInt(page, 1));
-    const limitNum = Math.min(50, Math.max(1, safeInt(limit, 10))); // cap at 50 results
+    const limitNum = Math.min(50, Math.max(1, safeInt(limit, 10))); 
     const offset = (pageNum - 1) * limitNum;
 
-    // ── Allowed sort columns ──────────────────────────────────────────────────
     const allowedSortCols = ["rating", "name", "nirf_rank", "established_year"];
     const sortCol = allowedSortCols.includes(sortBy) ? sortBy : "rating";
     const sortDir = sortOrder.toUpperCase() === "ASC" ? "ASC" : "DESC";
 
-    // ── Query Database ────────────────────────────────────────────────────────
     const { count, rows } = await College.findAndCountAll({
       where,
       include: [
@@ -153,7 +181,8 @@ const getColleges = async (req, res) => {
     return res.status(500).json({ success: false, message: "Failed to fetch colleges." });
   }
 };
-// ─── GET /api/colleges/:id ────────────────────────────────────────────────────
+
+// ─── GET /api/colleges/:id 
 
  
 const getCollegeById = async (req, res) => {
@@ -197,16 +226,18 @@ const getCollegeById = async (req, res) => {
 
     // Dynamic enrichment if database details are missing
     if ((!college.courses || college.courses.length === 0) && (!college.placements || college.placements.length === 0)) {
-      const { fetchCollegeFromGroq } = require("../services/groqService");
-      console.log(`[Dynamic Enrichment] College "${college.name}" (ID: ${college.id}) is missing details. Querying Groq...`);
+  
+      console.log(`[Dynamic Enrichment] College "${college.name}" (ID: ${college.id}) is missing details. Querying  AI...`);
       try {
         let collegeData = null;
+
         try {
           collegeData = await withTimeout(
             fetchCollegeFromGroq(college.name),
             15000,
             "AI dynamic college lookup timed out"
           );
+
         } catch (aiError) {
           console.warn("[Dynamic Enrichment] Groq lookup failed, using fallback:", aiError.message);
           collegeData = await buildFallbackCollegeProfile({
@@ -233,7 +264,7 @@ const getCollegeById = async (req, res) => {
   }
 };
 
-// ─── GET /api/colleges/compare-batch ─────────────────────────────────────────
+// ─── GET /api/colleges/compare-batch 
 
 
 const compareColleges = async (req, res) => {
@@ -298,7 +329,7 @@ const compareColleges = async (req, res) => {
 };
 
 
-// ─── Saved Items ──────────────────────────────────────────────────────────────
+// ─── Saved Items 
 
 
 const getSavedItems = async (req, res) => {
@@ -348,7 +379,7 @@ const addSavedItem = async (req, res) => {
       return res.status(404).json({ success: false, message: "College not found." });
     }
 
-    // findOrCreate prevents duplicates (enforced at DB level too)
+    
     const [savedItem, created] = await SavedItem.findOrCreate({
       where: { user_id: req.user.id, college_id },
       defaults: { notes },
@@ -366,7 +397,8 @@ const addSavedItem = async (req, res) => {
       message: `${college.name} added to your saved colleges.`,
       data: { savedItem },
     });
-  } catch (error) {
+  }
+   catch (error) {
     if (error.name === "SequelizeUniqueConstraintError") {
       return res.status(409).json({ success: false, message: "College already saved." });
     }
@@ -404,155 +436,10 @@ const removeSavedItem = async (req, res) => {
   }
 };
 
-const legacySearchOrFetchCollege = async (req, res) => {
-  try {
-    const { name } = req.query;
- 
-    if (!name || !name.trim()) {
-      return res.status(400).json({
-        success: false,
-        message: "Query param `name` is required. e.g. ?name=NIT Trichy",
-      });
-    }
- 
-    const collegeName = name.trim();
- 
-    // ── Step 1: Check DB first ────────────────────────────────────────────────
-    const existing = await College.findOne({
-      where: { name: { [Op.iLike]: `%${collegeName}%` } },
-      include: [
-        { model: Course, as: "courses", attributes: { exclude: ["createdAt", "updatedAt"] } },
-        { model: Placement, as: "placements", attributes: { exclude: ["createdAt", "updatedAt"] }, separate: true, order: [["year", "DESC"]] },
-        { model: Cutoff, as: "cutoffs", attributes: { exclude: ["createdAt", "updatedAt"] }, separate: true },
-        { model: Review, as: "reviews", attributes: { exclude: ["updatedAt"] }, separate: true, limit: 5 },
-      ],
-    });
- 
-    if (existing) {
-      return res.status(200).json({
-        success: true,
-        source: "database",
-        data: { college: existing },
-      });
-    }
- 
-    // ── Step 2: Not in DB — fetch from Groq ────────────────────────────────
-    console.log(`[AI Lookup] Fetching "${collegeName}" from the model...`);
-    const { fetchCollegeFromGroq } = require("../services/groqService");
-    const groqData = await fetchCollegeFromGroq(collegeName);
- 
-    // ── Step 3: Save to DB so next search is instant ─────────────────────────
-    const { sequelize } = require("../config/database");
- 
-    const savedCollege = await sequelize.transaction(async (t) => {
-      const college = await College.create(
-        {
-          name: geminiData.name,
-          location: geminiData.location,
-          state: geminiData.state,
-          rating: geminiData.rating || 0,
-          college_type: geminiData.college_type || "private",
-          established_year: geminiData.established_year,
-          affiliation: geminiData.affiliation,
-          naac_grade: geminiData.naac_grade,
-          nirf_rank: geminiData.nirf_rank,
-          total_intake: geminiData.total_intake,
-          website: geminiData.website,
-          image_url: geminiData.image_url || "",
-          overview: geminiData.overview,
-        },
-        { transaction: t }
-      );
- 
-      // Save courses
-      if (geminiData.courses?.length) {
-        await Course.bulkCreate(
-          geminiData.courses.map((c) => ({ ...c, college_id: college.id })),
-          { transaction: t }
-        );
-      }
- 
-      // Save placements
-      if (geminiData.placements?.length) {
-        await Placement.bulkCreate(
-          geminiData.placements.map((p) => ({ ...p, college_id: college.id })),
-          { transaction: t }
-        );
-      }
- 
-      // Save cutoffs
-      if (geminiData.cutoffs?.length) {
-        await Cutoff.bulkCreate(
-          geminiData.cutoffs.map((c) => ({ ...c, college_id: college.id })),
-          { transaction: t }
-        );
-      }
- 
-      // Save reviews
-      if (geminiData.reviews?.length) {
-        await Review.bulkCreate(
-          geminiData.reviews.map((r) => ({ ...r, college_id: college.id })),
-          { transaction: t }
-        );
-      }
- 
-      return college.id;
-    });
- 
-    // Fetch the fully populated college back
-    const fullCollege = await College.findByPk(savedCollege, {
-      include: [
-        { model: Course, as: "courses", attributes: { exclude: ["createdAt", "updatedAt"] } },
-        { model: Placement, as: "placements", attributes: { exclude: ["createdAt", "updatedAt"] }, separate: true, order: [["year", "DESC"]] },
-        { model: Cutoff, as: "cutoffs", attributes: { exclude: ["createdAt", "updatedAt"] }, separate: true },
-        { model: Review, as: "reviews", attributes: { exclude: ["updatedAt"] }, separate: true, limit: 5 },
-      ],
-    });
- 
-    return res.status(201).json({
-      success: true,
-      source: "ai_lookup",
-      message: `"${geminiData.name}" profile fetched and saved to database.`,
-      data: { college: fullCollege },
-    });
- 
-  } catch (error) {
-    console.error("[CollegeController.searchOrFetchCollege]", error);
- 
-    if (error instanceof SyntaxError) {
-      return res.status(502).json({
-        success: false,
-        message: "The model returned invalid data. Try again or rephrase the college name.",
-      });
-    }
- 
-    return res.status(500).json({
-      success: false,
-      message: "College search failed.",
-      error: error.message,
-    });
-  }
-};
 
-const findCollegeInDatabase = async ({ rawQuery = "", requestedUrl = "" }) => {
+const findCollegeInDatabase = async ({ rawQuery = "" }) => {
   const conditions = [];
   const searchTerms = expandSearchTerms(rawQuery);
-
-  if (requestedUrl) {
-    const normalizedWebsite = normalizeUrl(requestedUrl);
-    const websiteVariants = Array.from(
-      new Set([
-        requestedUrl,
-        normalizedWebsite,
-        normalizedWebsite.replace(/^https?:\/\//i, ""),
-      ])
-    ).filter(Boolean);
-
-    for (const website of websiteVariants) {
-      conditions.push({ website: { [Op.iLike]: `%${website}%` } });
-      conditions.push({ name: { [Op.iLike]: `%${website}%` } });
-    }
-  }
 
   for (const term of searchTerms) {
     const trimmed = term.trim();
@@ -562,7 +449,6 @@ const findCollegeInDatabase = async ({ rawQuery = "", requestedUrl = "" }) => {
     conditions.push({ location: { [Op.iLike]: `%${trimmed}%` } });
     conditions.push({ state: { [Op.iLike]: `%${trimmed}%` } });
     conditions.push({ affiliation: { [Op.iLike]: `%${trimmed}%` } });
-    conditions.push({ website: { [Op.iLike]: `%${trimmed}%` } });
   }
 
   if (!conditions.length) return null;
@@ -603,58 +489,11 @@ const allowedCollegeTypes = new Set(["government", "private", "deemed", "central
 const allowedDegreeTypes = new Set(["UG", "PG", "PhD", "Diploma"]);
 const allowedCategories = new Set(["General", "OBC", "SC", "ST", "EWS", "PWD"]);
 
-const numberOrNull = (value) => {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-};
 
-const intOrNull = (value) => {
-  const parsed = parseInt(value, 10);
-  return Number.isFinite(parsed) ? parsed : null;
-};
 
-const clampRating = (value) => {
-  const parsed = numberOrNull(value);
-  if (parsed === null) return 0;
-  return Math.min(5, Math.max(0, parsed));
-};
-
-const withTimeout = (promise, ms, message) => {
-  let timerId;
-  const timeoutPromise = new Promise((_, reject) => {
-    timerId = setTimeout(() => reject(new Error(message)), ms);
-  });
-  return Promise.race([
-    promise.finally(() => clearTimeout(timerId)),
-    timeoutPromise,
-  ]).catch(err => {
-    promise.catch(() => {}); // Prevent unhandled rejection if timeout wins
-    throw err;
-  });
-};
-
-const getExistingCollege = async (queryText, website = "") => {
-  const conditions = [];
-  for (const term of expandSearchTerms(queryText)) {
-    conditions.push({ name: { [Op.iLike]: `%${term}%` } });
-    conditions.push({ location: { [Op.iLike]: `%${term}%` } });
-    conditions.push({ state: { [Op.iLike]: `%${term}%` } });
-  }
-  if (website) {
-    const withoutProtocol = website.replace(/^https?:\/\//i, "");
-    conditions.push({ website: { [Op.iLike]: `%${withoutProtocol}%` } });
-  }
-
-  if (!conditions.length) return null;
-
-  return College.findOne({
-    where: { [Op.or]: conditions },
-    include: fullCollegeIncludes,
-  });
-};
 
 const saveGroqCollege = async (groqData, collegeId = null) => {
-  const { sequelize } = require("../config/database");
+
   const isUpdate = !!collegeId;
 
   return sequelize.transaction(async (t) => {
@@ -780,11 +619,10 @@ const searchOrFetchCollege = async (req, res) => {
     }
 
     const rawQuery = name.trim();
-    const requestedUrl = isLikelyUrl(rawQuery) ? normalizeUrl(rawQuery) : "";
-    const queryText = requestedUrl ? rawQuery : normalizeCollegeQuery(rawQuery);
+    const queryText = normalizeCollegeQuery(rawQuery);
 
-    // 1. Database FIRST Lookup
-    const existing = await findCollegeInDatabase({ rawQuery, requestedUrl });
+    
+    const existing = await findCollegeInDatabase({ rawQuery });
 
     if (existing) {
       return res.status(200).json({
@@ -795,12 +633,12 @@ const searchOrFetchCollege = async (req, res) => {
       });
     }
 
-    // 2. Fallback to Gemini if completely unknown
+
     let collegeData = null;
     let source = "ai_enriched";
 
     try {
-      console.log(`[AI Lookup] Fetching "${queryText}" from Groq...`);
+      console.log(`[AI Lookup] Fetching "${queryText}" from AI...`);
       collegeData = await withTimeout(
         fetchCollegeFromGroq(queryText),
         15000,
@@ -810,7 +648,6 @@ const searchOrFetchCollege = async (req, res) => {
       console.warn("[CollegeController.searchOrFetchCollege] AI lookup failed, using mock data:", aiError.message);
       collegeData = await buildFallbackCollegeProfile({
         query: queryText,
-        sourceUrl: requestedUrl,
       });
       source = "web_lookup_fallback";
     }

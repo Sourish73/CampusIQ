@@ -143,7 +143,7 @@ export default function SearchPage() {
       <div className="relative overflow-visible bg-gradient-to-br from-white via-brand-50 to-amber-100/70 border-b border-amber-200/70 py-10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <h1 className="font-display text-4xl md:text-5xl text-[var(--text-primary)] mb-2 animate-fsu">
-            Search any college or official website
+            Search any college 
           </h1>
           <p className="text-[var(--text-secondary)] text-sm md:text-base mb-6 animate-fsu animate-fsu-1">
             {pagination.total > 0

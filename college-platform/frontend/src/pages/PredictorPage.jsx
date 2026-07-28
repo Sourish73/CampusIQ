@@ -7,12 +7,6 @@ const CATEGORIES = ["General", "OBC"];
 
 const EXAM_CHOICES = ["JEE Main", "JEE Advanced", "NEET UG", "VITEEE"];
 
-const CHANCE_TONE = {
-  Safe: "text-emerald-700 bg-emerald-500/10 border-emerald-500/20",
-  Good: "text-sky-700 bg-sky-500/10 border-sky-500/20",
-  Moderate: "text-amber-800 bg-amber-500/10 border-amber-500/20",
-  Reach: "text-rose-700 bg-rose-500/10 border-rose-500/20",
-};
 
 export default function PredictorPage() {
   const [searchParams] = useSearchParams();
@@ -210,8 +204,7 @@ export default function PredictorPage() {
 }
 
 function ResultRow({ result, index, onInsight }) {
-  const { college = {}, chance = {}, closing_rank, opening_rank, course_name, rankBuffer = 0 } = result;
-  const tone = CHANCE_TONE[chance.label] || CHANCE_TONE.Moderate;
+  const { college = {}, closing_rank, opening_rank, course_name, rankBuffer = 0 } = result;
   const website = college.website && college.website.startsWith("http") ? college.website : "";
   const detailHref = college.id ? `/college/${college.id}` : `/search?search=${encodeURIComponent(college.name || "")}`;
 
@@ -234,9 +227,7 @@ function ResultRow({ result, index, onInsight }) {
               {college.nirf_rank && <span className="px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-700 text-xs">NIRF #{college.nirf_rank}</span>}
             </div>
             <div className="flex flex-wrap items-center gap-2 mt-3">
-              <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border text-xs font-semibold ${tone}`}>
-                <Trophy size={11} /> {chance.label || "Moderate"}
-              </span>
+
               <span className="text-xs text-[var(--text-muted)]">
                 Closing rank: <strong className="text-[var(--text-primary)]">{closing_rank?.toLocaleString?.() || "—"}</strong>
               </span>

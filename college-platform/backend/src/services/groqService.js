@@ -5,17 +5,6 @@ const Groq = require("groq-sdk");
 const GROQ_MODEL = "llama-3.3-70b-versatile";
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "missing-key" });
 
-const isLikelyUrl = (value = "") => {
-  const trimmed = value.trim();
-  return /^(https?:\/\/)?([\w-]+\.)+[\w-]{2,}(\/\S*)?$/i.test(trimmed);
-};
-
-const normalizeUrl = (value = "") => {
-  const trimmed = value.trim();
-  if (!trimmed) return "";
-  return /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-};
-
 const normalizeCollegeQuery = (value = "") => {
   const trimmed = value.trim();
   if (!trimmed) return "";
@@ -23,11 +12,11 @@ const normalizeCollegeQuery = (value = "") => {
   const compact = trimmed.toLowerCase().replace(/[^a-z0-9]+/g, "");
   const aliasMap = {
     iit: "Indian Institute of Technology",
-    "iitb": "Indian Institute of Technology Bombay",
-    "iitm": "Indian Institute of Technology Madras",
-    "iitd": "Indian Institute of Technology Delhi",
-    "iitk": "Indian Institute of Technology Kanpur",
-    "iitkgp": "Indian Institute of Technology Kharagpur",
+    iitb: "Indian Institute of Technology Bombay",
+    iitm: "Indian Institute of Technology Madras",
+    iitd: "Indian Institute of Technology Delhi",
+    iitk: "Indian Institute of Technology Kanpur",
+    iitkgp: "Indian Institute of Technology Kharagpur",
     aiim: "All India Institute of Medical Sciences",
     vit: "Vellore Institute of Technology",
     srm: "SRM Institute of Science and Technology",
@@ -39,128 +28,20 @@ const normalizeCollegeQuery = (value = "") => {
     dtu: "Delhi Technological University",
     nsut: "Netaji Subhas University of Technology",
     manipal: "Manipal Institute of Technology",
+    
   };
 
   return aliasMap[compact] ? `${aliasMap[compact]} (${trimmed})` : trimmed;
 };
 
-const resolveKnownCollegeWebsite = (value = "") => {
-  const trimmed = value.trim().toLowerCase();
-  const patterns = [
-    { match: /(all india institute of medical sciences|aiims|aiim)/i, website: "https://www.aiims.edu" },
-    { match: /(vellore institute of technology|\bvit\b)/i, website: "https://vit.ac.in" },
-    { match: /(srm institute of science and technology|\bsrm\b)/i, website: "https://www.srmist.edu.in" },
-    { match: /(kalinga institute of industrial technology|\bkiit\b)/i, website: "https://kiit.ac.in" },
-    { match: /(bits pilani|birla institute of technology and science)/i, website: "https://www.bits-pilani.ac.in" },
-    { match: /(delhi technological university|\bdtu\b)/i, website: "https://dtu.ac.in" },
-    { match: /(netaji subhas university of technology|\bnsut\b)/i, website: "https://www.nsut.ac.in" },
-    { match: /(manipal institute of technology|manipal academy of higher education)/i, website: "https://manipal.edu/mit.html" },
-    { match: /(anna university)/i, website: "https://www.annauniv.edu" },
-    { match: /(indian institute of management ahmedabad|\biima\b)/i, website: "https://www.iima.ac.in" },
-    { match: /(indian institute of technology bombay|\biitb\b|\biit bombay\b)/i, website: "https://www.iitb.ac.in" },
-    { match: /(indian institute of technology madras|\biitm\b|\biit madras\b)/i, website: "https://www.iitm.ac.in" },
-    { match: /(indian institute of technology delhi|\biitd\b|\biit delhi\b)/i, website: "https://home.iitd.ac.in" },
-    { match: /(indian institute of technology kanpur|\biitk\b|\biit kanpur\b)/i, website: "https://www.iitk.ac.in" },
-    { match: /(indian institute of technology kharagpur|\biitkgp\b|\biit kharagpur\b)/i, website: "https://www.iitkgp.ac.in" },
-  ];
 
-  for (const entry of patterns) {
-    if (entry.match.test(trimmed)) return entry.website;
-  }
-
-  return "";
-};
-
-const searchCollegeWebsite = async (query) => {
-  const knownWebsite = resolveKnownCollegeWebsite(query);
-  if (knownWebsite) {
-    return { website: knownWebsite, title: query };
-  }
-
-  const encoded = encodeURIComponent(`${query} official website`);
-  const url = `https://html.duckduckgo.com/html/?q=${encoded}`;
-
-  try {
-    const response = await fetch(url, {
-      headers: {
-        "user-agent":
-          "Mozilla/5.0 (compatible; CampusIQ/1.0; +https://campusiq.local)",
-        accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      },
-    });
-
-    if (!response.ok) return null;
-
-    const html = await response.text();
-    const results = [...html.matchAll(/<a[^>]+class="result__a"[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi)];
-    for (const [, href, titleHtml] of results) {
-      const title = stripHtml(titleHtml);
-      if (!href || /duckduckgo\.com|bing\.com|google\.com/i.test(href)) continue;
-      return {
-        website: href,
-        title,
-      };
-    }
-  } catch (error) {
-    console.warn("[CollegeWebsiteSearch]", error.message);
-  }
-
-  return null;
-};
-
-const stripHtml = (html = "") =>
-  html
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<noscript[\s\S]*?<\/noscript>/gi, " ")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&#x27;|&#39;/gi, "'")
-    .replace(/&quot;/gi, '"')
-    .replace(/\s+/g, " ")
-    .trim();
-
-const fetchWebsiteSnapshot = async (url) => {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 6000);
-
-  try {
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: {
-        "user-agent":
-          "Mozilla/5.0 (compatible; CampusIQ/1.0; +https://campusiq.local)",
-        accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-      },
-    });
-
-    if (!response.ok) {
-      return "";
-    }
-
-    const html = await response.text();
-    return stripHtml(html).slice(0, 10000);
-  } catch (error) {
-    console.warn("[GeminiWebsiteFetch]", error.message);
-    return "";
-  } finally {
-    clearTimeout(timeout);
-  }
-};
-
-const PROMPT_TEMPLATE = ({ query, sourceUrl, websiteText }) => `
+const PROMPT_TEMPLATE = ({ query }) => `
 You are CampusIQ's Indian higher-education research engine.
 
 Task:
 - Research the college or university represented by this input: "${query}".
-- Prefer the source URL when one is provided.
 - Return decision-ready data for admissions, courses, placements, fees, cutoffs, accreditation, and rankings.
 - Use null when a value is unknown.
-
-Source URL: ${sourceUrl || "none"}
-Website text excerpt:
-${websiteText || "No website content was fetched. Use your best available public knowledge."}
 
 Return ONLY valid JSON. No markdown, no backticks, no commentary.
 
@@ -249,7 +130,7 @@ const parseJsonResponse = (text) => {
   const start = cleaned.indexOf("{");
   const end = cleaned.lastIndexOf("}");
   if (start === -1 || end === -1 || end <= start) {
-    throw new SyntaxError("Gemini response did not contain a JSON object");
+    throw new SyntaxError("AI response did not contain a JSON object");
   }
 
   return JSON.parse(cleaned.slice(start, end + 1));
@@ -261,44 +142,16 @@ const fetchCollegeFromGroq = async (query) => {
   }
 
   const raw = query.trim();
-  const sourceUrl = isLikelyUrl(raw) ? normalizeUrl(raw) : "";
-  const trimmed = sourceUrl ? raw : normalizeCollegeQuery(raw);
-  const websiteText = sourceUrl ? await fetchWebsiteSnapshot(sourceUrl) : "";
+  const trimmed = normalizeCollegeQuery(raw);
 
-  const prompt = PROMPT_TEMPLATE({ query: trimmed, sourceUrl, websiteText });
+  const prompt = PROMPT_TEMPLATE({ query: trimmed });
   const text = await generateWithFallback(prompt, true);
   const data = parseJsonResponse(text);
-  if (sourceUrl && !data.website) data.website = sourceUrl;
   return data;
 };
 
-const buildFallbackCollegeProfile = async ({ query, sourceUrl = "" }) => {
-  const discovered = sourceUrl
-    ? { website: sourceUrl, title: query }
-    : await searchCollegeWebsite(query);
-
-  const website = discovered?.website ? normalizeUrl(discovered.website) : sourceUrl || "";
-  const rawTitle = discovered?.title ? stripHtml(discovered.title) : "";
-  const normalizedQuery = normalizeCollegeQuery(query).replace(/\s*\([^)]*\)\s*$/, "");
-  const rawTitleCompact = rawTitle.replace(/\s+/g, "");
-  const looksLikeAcronym = /^[A-Z0-9]{2,12}$/.test(rawTitleCompact);
-  const name =
-    rawTitle &&
-    rawTitle.length > 3 &&
-    rawTitle.toLowerCase() !== query.toLowerCase() &&
-    !looksLikeAcronym
-      ? rawTitle
-      : normalizedQuery;
-
-  let websiteText = "";
-  if (website) {
-    websiteText = await fetchWebsiteSnapshot(website);
-  }
-
-  const titleMatch = websiteText.match(/(?:<title>|title:\s*)([^|<\n]+)/i);
-  const metaMatch = websiteText.match(/(?:description|about)\s*[:\-]\s*([^.\n]{20,180})/i);
-
-  // Generate realistic/mock details so they are never blank/black
+const buildFallbackCollegeProfile = async ({ query }) => {
+  const name = normalizeCollegeQuery(query).replace(/\s*\([^)]*\)\s*$/, "");
   const location = name.toLowerCase().includes("bombay") || name.toLowerCase().includes("mumbai") ? "Mumbai" 
                  : name.toLowerCase().includes("delhi") ? "New Delhi"
                  : name.toLowerCase().includes("madras") || name.toLowerCase().includes("chennai") ? "Chennai"
@@ -321,14 +174,9 @@ const buildFallbackCollegeProfile = async ({ query, sourceUrl = "" }) => {
     naac_grade: "A",
     nirf_rank: 78,
     total_intake: 1200,
-    website: website || "",
+    website: "",
     image_url: "",
-    overview:
-      metaMatch?.[1]
-        ? metaMatch[1].trim()
-        : titleMatch?.[1]
-          ? `${titleMatch[1].trim()} official site loaded.`
-          : `Profile for ${name || query}. Information fetched via web lookup.`,
+    overview: `Profile for ${name || query}. Information fetched via AI lookup.`,
     courses: [
       {
         name: "B.Tech Computer Science and Engineering",
@@ -380,13 +228,13 @@ const buildFallbackCollegeProfile = async ({ query, sourceUrl = "" }) => {
         round: 3
       }
     ],
-    reviews: buildFallbackReviews({ name: name || query, website, overview: metaMatch?.[1] || titleMatch?.[1] || "" }),
+    reviews: buildFallbackReviews({ name: name || query, overview: `Profile for ${name || query}. Information fetched via AI lookup.` }),
   };
 };
 
-const buildFallbackReviews = ({ name, website, overview }) => {
+const buildFallbackReviews = ({ name, overview }) => {
   const currentYear = new Date().getFullYear();
-  const summary = overview || `${name} looks like a college worth comparing, based on publicly available web data.`;
+  const summary = overview || `${name} looks like a college worth comparing.`;
 
   return [
     {
@@ -398,7 +246,7 @@ const buildFallbackReviews = ({ name, website, overview }) => {
       placement_rating: 4.0,
       title: "Public web summary",
       body: summary,
-      pros: website ? "Official website discovered and profile validated." : "Enough public signals to build a starter profile.",
+      pros: "Enough public signals to build a starter profile.",
       cons: "Some placement and cutoff details may still need manual verification.",
     },
     {
@@ -455,11 +303,7 @@ const mergeCollegeProfiles = (baseProfile = {}, aiProfile = {}) => {
 
 
 
-const withTimeout = (promise, ms, message) =>
-  Promise.race([
-    promise,
-    new Promise((_, reject) => setTimeout(() => reject(new Error(message)), ms)),
-  ]);
+
 
 const generateWithFallback = async (prompt, isJson = false) => {
   const modelName = GROQ_MODEL;
@@ -486,7 +330,7 @@ const generateWithFallback = async (prompt, isJson = false) => {
 
 const safeGenerateJson = async ({ prompt, fallback }) => {
   if (!process.env.GROQ_API_KEY) {
-    return { ...fallback, fallback: true, message: "Groq API key is not configured." };
+    return { ...fallback, fallback: true, message: " API key is not configured." };
   }
 
   try {
@@ -570,8 +414,7 @@ module.exports = {
   fetchCollegeSummary,
   fetchCollegeReviews,
   fetchCollegeComparison,
-  isLikelyUrl,
-  normalizeUrl,
+
   normalizeCollegeQuery,
   buildFallbackCollegeProfile,
   mergeCollegeProfiles,

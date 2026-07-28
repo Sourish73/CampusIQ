@@ -77,8 +77,8 @@ router.get(
   compareColleges
 );
 
-// ─── AI College Search ───────────────────────────────────────────────────────
-// MUST be before /:id or "search-ai" gets treated as a numeric id (and fails)
+// ─── AI College Search 
+
 router.get(
   "/colleges/search-ai",
   [
@@ -102,7 +102,7 @@ router.get(
   getColleges
 );
 
-// /:id is always LAST among college routes
+
 router.get(
   "/colleges/:id",
   [param("id").isInt({ min: 1 }).withMessage("College ID must be a positive integer")],
@@ -144,7 +144,7 @@ router.post(
 
 // ─────────────────────────────────────────────────────────────────────────────
 // SAVED ITEMS ROUTES  (all protected)
-// ─────────────────────────────────────────────────────────────────────────────
+
 
 router.get("/saved-items", protect, getSavedItems);
 

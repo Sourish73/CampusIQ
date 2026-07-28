@@ -5,7 +5,7 @@ require("dotenv").config();
 const { Pool } = require("pg");
 
 if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL is required. Add it to backend/.env.");
+  throw new Error("DATABASE_URL is required.");
 }
 
 const pool = new Pool({

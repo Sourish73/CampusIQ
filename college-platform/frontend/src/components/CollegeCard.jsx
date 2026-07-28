@@ -1,8 +1,4 @@
-/**
- * src/components/CollegeCard.jsx
- * Presentation card for a single college result.
- * Props: college, onCompare, isInCompare, onSave, isSaved
- */
+
 
 import { Link } from "react-router-dom";
 import {

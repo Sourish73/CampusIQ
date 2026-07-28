@@ -28,7 +28,7 @@ const buildAuthResponse = (user, token) => ({
   },
 });
 
-// ─── Controllers ──────────────────────────────────────────────────────────────
+
 
 
 const register = async (req, res) => {

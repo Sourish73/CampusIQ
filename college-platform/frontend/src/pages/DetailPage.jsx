@@ -209,7 +209,7 @@ export default function DetailPage() {
           {/* Quick stat strip */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
             <QuickStat label="Avg CTC" value={latestPlacement?.average_ctc ? `${latestPlacement.average_ctc} LPA` : "N/A"} icon={TrendingUp} />
-            <QuickStat label="Highest CTC" value={latestPlacement?.highest_ctc ? `${latestPlacement.highest_ctc} Cr` : "N/A"} icon={Trophy} />
+            <QuickStat label="Highest CTC" value={latestPlacement?.highest_ctc ? `${latestPlacement.highest_ctc} LPA` : "N/A"} icon={Trophy} />
             <QuickStat label="Placement %" value={latestPlacement?.placement_percentage ? `${latestPlacement.placement_percentage}%` : "N/A"} icon={BarChart2} />
             <QuickStat label="Total Intake" value={college.total_intake ? `${college.total_intake.toLocaleString()} seats` : "N/A"} icon={Users} />
           </div>
@@ -306,7 +306,7 @@ function OverviewTab({ college }) {
             </h3>
             <div className="space-y-3">
               <PlacementRow label="Average CTC" value={`${college.placements[0].average_ctc} LPA`} />
-              <PlacementRow label="Highest CTC" value={`${college.placements[0].highest_ctc} Cr`} />
+              <PlacementRow label="Highest CTC" value={`${college.placements[0].highest_ctc} LPA`} />
               <PlacementRow label="Placement %" value={`${college.placements[0].placement_percentage}%`} />
               {Array.isArray(college.placements[0].top_recruiters) && (
                 <div className="pt-2 border-t border-amber-100">
@@ -440,7 +440,7 @@ function PlacementsTab({ placements = [] }) {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
             <PlacementStat label="Average CTC" value={`${p.average_ctc} LPA`} color="blue" />
             <PlacementStat label="Median CTC" value={p.median_ctc ? `${p.median_ctc} LPA` : "—"} color="indigo" />
-            <PlacementStat label="Highest CTC" value={`${p.highest_ctc} Cr`} color="purple" />
+            <PlacementStat label="Highest CTC" value={`${p.highest_ctc} LPA`} color="purple" />
             <PlacementStat label="Placement %" value={`${p.placement_percentage}%`} color="green" />
           </div>
 

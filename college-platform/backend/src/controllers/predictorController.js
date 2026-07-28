@@ -2,17 +2,7 @@
 
 const pool = require("../config/db");
 
-const getChanceObject = (buffer) => {
-  if (buffer >= 5000) {
-    return { label: "Safe", color: "green", description: "Your rank is significantly better than the closing rank." };
-  } else if (buffer >= 1500) {
-    return { label: "Good", color: "blue", description: "Your rank is comfortably below the closing rank." };
-  } else if (buffer >= 300) {
-    return { label: "Moderate", color: "amber", description: "Your rank is close to the closing rank, admission is likely but competitive." };
-  } else {
-    return { label: "Reach", color: "rose", description: "Your rank is very close to the closing rank, highly competitive." };
-  }
-};
+
 
 const EXAMS = ["JEE Main", "JEE Advanced", "NEET UG", "VITEEE"];
 const EXAM_ALIASES = new Map([
@@ -31,7 +21,9 @@ const normalizeExamName = (value = "") => {
 };
 
 const predictColleges = async (req, res) => {
+  
   const rank = Number.parseInt(req.body.rank, 10);
+
   if (!Number.isFinite(rank) || rank <= 0) {
     return res.status(400).json({
       success: false,
@@ -48,28 +40,12 @@ const predictColleges = async (req, res) => {
   }
 
   const category = String(req.body.category || "General").trim() || "General";
-  const filters = req.body.filters || {};
   const params = [exam, category, rank];
   const clauses = [
     "c.exam_name = $1",
     "c.category = $2",
     "c.closing_rank >= $3",
   ];
-
-  if (filters.state) {
-    params.push(filters.state);
-    clauses.push(`LOWER(COALESCE(co.state, c.state, '')) = LOWER($${params.length})`);
-  }
-
-  if (filters.course_name) {
-    params.push(`%${filters.course_name}%`);
-    clauses.push(`c.course_name ILIKE $${params.length}`);
-  }
-
-  if (filters.college_type) {
-    params.push(filters.college_type);
-    clauses.push(`LOWER(COALESCE(co.college_type, c.college_type, '')) = LOWER($${params.length})`);
-  }
 
   const sql = `
     SELECT
@@ -118,7 +94,7 @@ const predictColleges = async (req, res) => {
       year: row.year,
       round: row.round,
       rankBuffer: row.closing_rank - rank,
-      chance: getChanceObject(row.closing_rank - rank),
+
       college: {
         id: row.college_id,
         name: row.college_name,
@@ -143,7 +119,7 @@ const predictColleges = async (req, res) => {
       message: results.length ? "Matched colleges found." : "No colleges match this rank and filters.",
       data: {
         results,
-        query: { exam_name: exam, rank, category, filters },
+        query: { exam_name: exam, rank, category },
       },
     });
   } catch (error) {

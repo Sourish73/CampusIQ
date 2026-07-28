@@ -12,8 +12,6 @@ const api = axios.create({
   },
 });
 
-// ─── Request Interceptor ──────────────────────────────────────────────────────
-// Attaches the Bearer token from localStorage to every request
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("campus_iq_token");
@@ -25,8 +23,6 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// ─── Response Interceptor ─────────────────────────────────────────────────────
-// Handles 401 globally — clears stale session
 api.interceptors.response.use(
   (response) => response,
   (error) => {
@@ -42,7 +38,7 @@ api.interceptors.response.use(
   }
 );
 
-// ─── API Service Functions ────────────────────────────────────────────────────
+
 
 export const authAPI = {
   register: (data) => api.post("/auth/register", data),

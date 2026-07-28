@@ -6,8 +6,8 @@
 :root {
   --bg-primary: #fff7f4;
   --bg-secondary: #fff0f0;
-  --bg-card: #ffffff;
-  --bg-card-hover: #fff8cc;
+  --bg-card: rgba(244, 114, 182, 0.1); /* Vibrant pinkish transparent */
+  --bg-card-hover: rgba(244, 114, 182, 0.2);
   --border-subtle: rgba(153, 102, 102, 0.14);
   --border-accent: rgba(239, 159, 173, 0.42);
   --text-primary: #2d2214;
@@ -35,6 +35,7 @@ html {
 
 body {
   font-family: "Plus Jakarta Sans", "Inter", "Segoe UI", system-ui, sans-serif;
+  font-weight: 600;
   background:
     radial-gradient(circle at top left, rgba(255, 226, 233, 0.92) 0%, transparent 32%),
     linear-gradient(180deg, rgba(255, 240, 243, 0.98) 0%, rgba(255, 248, 250, 1) 38%, #ffffff 100%);
@@ -54,7 +55,7 @@ body {
 /* ─── Utility Classes ──────────────────────────────────────────────────────── */
 @layer components {
   .card {
-    @apply bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl shadow-sm shadow-amber-900/5;
+    @apply bg-[var(--bg-card)] border border-[var(--border-subtle)] rounded-2xl shadow-sm shadow-pink-900/5 backdrop-blur-md;
   }
 
   .card-hover {

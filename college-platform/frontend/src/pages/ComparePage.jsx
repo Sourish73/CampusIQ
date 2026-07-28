@@ -29,7 +29,7 @@ const COMPARE_ROWS = [
     return fees?.length ? formatINR(Math.min(...fees)) : "—";
   }, highlight: true },
   { key: "avg_ctc",        label: "Avg CTC",          icon: TrendingUp,  render: (c) => c.placements?.[0]?.average_ctc ? `${c.placements[0].average_ctc} LPA` : "—", highlight: true },
-  { key: "highest_ctc",    label: "Highest CTC",      icon: TrendingUp,  render: (c) => c.placements?.[0]?.highest_ctc ? `${c.placements[0].highest_ctc} Cr` : "—" },
+  { key: "highest_ctc",    label: "Highest CTC",      icon: TrendingUp,  render: (c) => c.placements?.[0]?.highest_ctc ? `${c.placements[0].highest_ctc} LPA` : "—" },
   { key: "placement_pct",  label: "Placement %",      icon: BarChart2,   render: (c) => c.placements?.[0]?.placement_percentage ? `${c.placements[0].placement_percentage}%` : "—", highlight: true },
   { key: "top_recruiters", label: "Top Recruiters",   icon: Users,       render: (c) => {
     const recs = c.placements?.[0]?.top_recruiters;
