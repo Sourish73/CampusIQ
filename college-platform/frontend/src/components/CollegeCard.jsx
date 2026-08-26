@@ -38,7 +38,7 @@ export default function CollegeCard({ college, onCompare, isInCompare, onSave, i
 
   return (
     <article className="card-hover group overflow-hidden animate-fsu">
-      {/* ── Top strip: Type badge + actions ──────────────────────────────── */}
+     
       <div className="flex items-start justify-between p-4 pb-0">
         <div className="flex items-center gap-2">
           <span className={TYPE_STYLES[college.college_type] || "tag-private"}>
@@ -57,9 +57,8 @@ export default function CollegeCard({ college, onCompare, isInCompare, onSave, i
           )}
         </div>
 
-        {/* Action buttons */}
         <div className="flex items-center gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          {/* Compare toggle */}
+         
           <button
             onClick={() => onCompare?.(college)}
             title={isInCompare ? "Remove from compare" : "Add to compare"}
@@ -73,7 +72,6 @@ export default function CollegeCard({ college, onCompare, isInCompare, onSave, i
             <span className="hidden sm:inline">{isInCompare ? "Added" : "Compare"}</span>
           </button>
 
-          {/* Save toggle */}
           {isAuthenticated && (
             <button
               onClick={() => onSave?.(college)}
@@ -90,7 +88,7 @@ export default function CollegeCard({ college, onCompare, isInCompare, onSave, i
         </div>
       </div>
 
-      {/* ── College identity ──────────────────────────────────────────────── */}
+      
       <div className="p-4">
         <Link to={`/college/${college.id}`} className="group/link block mb-1">
           <h3 className="font-semibold text-base text-[var(--text-primary)] group-hover/link:text-brand-300 transition-colors leading-tight line-clamp-2">
@@ -103,7 +101,7 @@ export default function CollegeCard({ college, onCompare, isInCompare, onSave, i
           <span>{college.location}, {college.state}</span>
         </div>
 
-        {/* Rating bar */}
+      
         <div className="flex items-center gap-2 mb-4">
           <div className="flex items-center gap-1">
             {[1, 2, 3, 4, 5].map((s) => (
@@ -196,7 +194,7 @@ export default function CollegeCard({ college, onCompare, isInCompare, onSave, i
   );
 }
 
-// ─── Mini Stat Pill ───────────────────────────────────────────────────────────
+
 function StatPill({ icon: Icon, label, value, color }) {
   const colorMap = {
     blue: "text-blue-400 bg-blue-500/10",

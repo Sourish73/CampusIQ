@@ -10,8 +10,7 @@ const USER_KEY = "campus_iq_user";
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(() => localStorage.getItem(TOKEN_KEY));
-  const [loading, setLoading] = useState(true); // true until initial session check
-
+  const [loading, setLoading] = useState(true); 
   // ── Persist helpers ─────────────────────────────────────────────────────────
   const persistSession = useCallback((userData, authToken) => {
     localStorage.setItem(TOKEN_KEY, authToken);
@@ -38,7 +37,7 @@ export function AuthProvider({ children }) {
         return;
       }
 
-      // Optimistically restore from localStorage
+      //  restore from localStorage
       if (savedUser) {
         try {
           setUser(JSON.parse(savedUser));
@@ -67,7 +66,7 @@ export function AuthProvider({ children }) {
     };
 
     restoreSession();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []); 
 
   // ── Listen for global auth expiry events (from axios interceptor) ───────────
   useEffect(() => {
@@ -123,9 +122,7 @@ export function AuthProvider({ children }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-/**
- * useAuth — convenience hook. Throws if used outside AuthProvider.
- */
+
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth must be used within an AuthProvider");
