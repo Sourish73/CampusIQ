@@ -2,7 +2,7 @@
 
 const Groq = require("groq-sdk");
 
-const GROQ_MODEL = "llama3-8b-8192";
+const GROQ_MODEL = "groq/compound";
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "missing-key" });
 
 const normalizeCollegeQuery = (value = "") => {
