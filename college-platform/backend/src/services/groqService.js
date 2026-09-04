@@ -2,7 +2,7 @@
 
 const Groq = require("groq-sdk");
 
-const GROQ_MODEL = "groq/compound";
+const GROQ_MODEL = "qwen/qwen3.8-27b";
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "missing-key" });
 
 const normalizeCollegeQuery = (value = "") => {
