@@ -217,21 +217,21 @@ export default function DetailPage() {
       </div>
 
       {/* ── Tab Navigation ────────────────────────────────────────────────── */}
-      <div className="sticky top-16 z-30 bg-[var(--bg-primary)] border-b border-amber-200/70">
+      <div className="sticky top-16 z-30 bg-white shadow-sm border-b border-pink-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex overflow-x-auto scrollbar-hide">
+          <div className="grid grid-cols-4 gap-2 py-2">
             {TABS.map(({ id: tid, label, icon: Icon }) => (
               <button
                 key={tid}
                 onClick={() => setActiveTab(tid)}
-                className={`flex items-center gap-2 px-5 py-4 text-sm font-semibold whitespace-nowrap border-b-2 transition-all duration-200 ${
+                className={`flex flex-col sm:flex-row items-center justify-center gap-1 sm:gap-2 px-2 py-3 rounded-xl font-bold transition-all duration-200 shadow-sm ${
                   activeTab === tid
-                    ? "border-brand-500 text-brand-800"
-                    : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-secondary)]"
+                    ? "bg-gradient-to-r from-pink-500 to-rose-500 text-white transform scale-105"
+                    : "bg-pink-50/50 text-pink-700 hover:bg-pink-100 hover:text-pink-900 border border-pink-100"
                 }`}
               >
-                <Icon size={15} />
-                {label}
+                <Icon size={18} className={activeTab === tid ? "text-white" : "text-pink-500"} />
+                <span className="text-xs sm:text-base">{label}</span>
               </button>
             ))}
           </div>
@@ -271,9 +271,11 @@ function OverviewTab({ college }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-7">
       <div className="lg:col-span-2 space-y-6">
-        <div className="card-hover p-6 hover:scale-[1.015]">
-          <h2 className="font-display text-xl text-[var(--text-primary)] mb-4">About {college.name}</h2>
-          <p className="text-[var(--text-secondary)] text-sm leading-relaxed whitespace-pre-line">
+        <div className="card-hover p-8 hover:scale-[1.015] bg-gradient-to-br from-pink-50 to-rose-50 border-2 border-pink-200 shadow-sm">
+          <h2 className="font-display text-2xl font-bold text-pink-950 mb-4 flex items-center gap-2">
+            <Building2 size={24} className="text-pink-500" /> About {college.name}
+          </h2>
+          <p className="text-pink-900 font-medium text-base leading-relaxed whitespace-pre-line bg-white/60 p-5 rounded-2xl border border-pink-100 shadow-inner">
             {college.overview || "Detailed overview not available yet."}
           </p>
         </div>
