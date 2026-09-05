@@ -2,7 +2,7 @@
 
 const Groq = require("groq-sdk");
 
-const GROQ_MODEL = "qwen/qwen3.8-27b";
+const GROQ_MODEL = "openai/gpt-oss-120b";
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "missing-key" });
 
 const normalizeCollegeQuery = (value = "") => {
@@ -118,7 +118,7 @@ Rules:
 - Include at least 3 courses when available.
 - Include the latest placement year available.
 - Include useful cutoffs for rank prediction when available, especially JEE Main, JEE Advanced, NEET, CAT, CUET, GATE, or state exams.
-- Include 2 concise research-review summaries.
+- Include 3 detailed research-review summaries.
 `;
 
 const parseJsonResponse = (text) => {
@@ -383,11 +383,11 @@ const fetchCollegeReviews = (name) =>
       ],
     },
     prompt: `
-Return ONLY valid JSON with concise synthetic review insights based on public knowledge:
+Return ONLY valid JSON with detailed synthetic review insights based on public knowledge. You MUST provide exactly 3 detailed reviews:
 {
   "sentiment": "positive",
   "reviews": [
-    { "title": "Short title", "sentiment": "positive", "body": "2 sentence review-style insight" }
+    { "title": "Detailed title", "sentiment": "positive", "body": "4-5 sentence detailed review insight" }
   ]
 }
 College: ${name}
