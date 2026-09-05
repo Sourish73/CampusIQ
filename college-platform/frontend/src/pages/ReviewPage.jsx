@@ -129,78 +129,69 @@ export default function ReviewPage() {
         )}
 
         {!loading && college && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 card p-6">
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                <div>
-                  <h2 className="font-display text-3xl text-[var(--text-primary)]">{college.name}</h2>
-                  <p className="text-sm text-[var(--text-muted)] mt-1">
-                    {college.location}, {college.state}
+          <div className="flex justify-center">
+            <div className="w-full max-w-4xl card p-8 shadow-xl border-t-4 border-t-pink-500">
+              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 text-center md:text-left border-b border-pink-100 pb-6">
+                <div className="w-full">
+                  <h2 className="font-display text-4xl font-bold text-[var(--text-primary)]">{college.name}</h2>
+                  <p className="text-md font-medium text-[var(--text-muted)] mt-2">
+                    📍 {college.location}, {college.state}
                   </p>
                 </div>
-                <div className="flex items-center gap-2 flex-wrap">
+                <div className="flex items-center justify-center md:justify-end gap-3 w-full md:w-auto mt-4 md:mt-0">
                   {college.website && (
-                    <a href={college.website} target="_blank" rel="noreferrer" className="btn-secondary text-xs px-3 py-2">
-                      Website <ExternalLink size={12} />
+                    <a href={college.website} target="_blank" rel="noreferrer" className="btn-secondary text-sm px-5 py-2.5 font-bold shadow-sm">
+                      Website <ExternalLink size={14} className="ml-1" />
                     </a>
                   )}
                   {college.id && (
-                    <Link to={`/compare?ids=${college.id}`} className="btn-secondary text-xs px-3 py-2">
-                      <GitCompare size={12} /> Compare
+                    <Link to={`/compare?ids=${college.id}`} className="btn-secondary text-sm px-5 py-2.5 font-bold shadow-sm">
+                      <GitCompare size={14} className="ml-1" /> Compare
                     </Link>
                   )}
                 </div>
               </div>
 
-              <div className="mt-6 space-y-4">
-                <p className="text-sm text-[var(--text-secondary)] leading-relaxed whitespace-pre-line">
-                  {college.overview || "No review summary returned yet."}
-                </p>
+              <div className="mt-8 space-y-8">
+                <div>
+                  <h3 className="text-xl font-bold text-[var(--text-primary)] mb-3 flex items-center gap-2">
+                    <Sparkles size={18} className="text-pink-500" /> College Overview
+                  </h3>
+                  <p className="text-base text-[var(--text-secondary)] leading-relaxed whitespace-pre-line font-medium bg-pink-50/50 p-5 rounded-2xl border border-pink-100">
+                    {college.overview || "No review summary returned yet."}
+                  </p>
+                </div>
 
                 <div>
-                  <h3 className="font-semibold text-[var(--text-primary)] mb-3">Review summaries</h3>
+                  <h3 className="text-xl font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+                    <MessageSquare size={18} className="text-pink-500" /> Review Summaries
+                  </h3>
                   {reviewsLoading ? (
-                    <div className="flex items-center gap-2 text-sm text-brand-600 py-4">
+                    <div className="flex items-center gap-2 text-sm font-bold text-brand-600 py-4 bg-brand-50 p-4 rounded-xl">
                       <Loader2 size={16} className="animate-spin" /> Fetching latest reviews...
                     </div>
                   ) : reviews.length > 0 ? (
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {reviews.map((review) => (
-                        <div key={review.id} className="rounded-2xl border border-amber-100 bg-amber-50/60 p-4">
-                          <div className="flex items-center justify-between gap-3">
+                        <div key={review.id} className="rounded-2xl border-2 border-amber-100 bg-amber-50/80 p-6 shadow-sm transition-transform hover:scale-[1.01]">
+                          <div className="flex items-center justify-between gap-3 border-b border-amber-200/50 pb-3 mb-3">
                             <div>
-                              <p className="text-sm font-semibold text-[var(--text-primary)]">{review.title}</p>
-                              <p className="text-xs text-[var(--text-muted)]">{review.reviewer_name}</p>
+                               <p className="text-lg font-bold text-amber-950">{review.title}</p>
+                              <p className="text-sm font-semibold text-amber-700/80 mt-1">{review.reviewer_name}</p>
                             </div>
-                            <span className="text-xs font-semibold text-brand-800">⭐ {review.rating}</span>
+                            <span className="text-lg font-black text-amber-600 bg-amber-100 px-3 py-1 rounded-full shadow-sm">⭐ {review.rating}</span>
                           </div>
-                          <p className="text-sm text-[var(--text-secondary)] mt-2 leading-relaxed">{review.body}</p>
+                          <p className="text-base font-medium text-amber-900/90 leading-relaxed">{review.body}</p>
                         </div>
                       ))}
                     </div>
                   ) : (
-                    <div className="rounded-2xl border border-dashed border-amber-200 bg-white p-5 text-sm text-[var(--text-muted)]">
+                    <div className="rounded-2xl border-2 border-dashed border-amber-200 bg-amber-50/30 p-6 text-center font-semibold text-amber-700">
                       No separate review list was returned for this college, but the profile above is ready to use.
                     </div>
                   )}
                 </div>
               </div>
-            </div>
-
-            <div className="space-y-4">
-              <InfoCard title="Quick Facts" items={[
-                ["NIRF", college.nirf_rank ? `#${college.nirf_rank}` : "—"],
-                ["NAAC", college.naac_grade || "—"],
-                ["Type", college.college_type || "—"],
-                ["Established", college.established_year || "—"],
-              ]} />
-
-              <InfoCard title="What to compare" items={[
-                ["Placements", college.placements?.[0] ? `${college.placements[0].average_ctc || "—"} LPA` : "—"],
-                ["Courses", college.courses?.length || 0],
-                ["Website", college.website ? "Available" : "Missing"],
-                ["Reviews", reviews.length || 0],
-              ]} />
             </div>
           </div>
         )}
