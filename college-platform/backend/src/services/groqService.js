@@ -156,12 +156,20 @@ const buildFallbackCollegeProfile = async ({ query }) => {
                  : name.toLowerCase().includes("delhi") ? "New Delhi"
                  : name.toLowerCase().includes("madras") || name.toLowerCase().includes("chennai") ? "Chennai"
                  : name.toLowerCase().includes("bangalore") || name.toLowerCase().includes("bengaluru") ? "Bengaluru"
-                 : "Kolkata";
+                 : name.toLowerCase().includes("bhopal") ? "Bhopal"
+                 : name.toLowerCase().includes("vellore") ? "Vellore"
+                 : name.toLowerCase().includes("pune") ? "Pune"
+                 : name.toLowerCase().includes("hyderabad") ? "Hyderabad"
+                 : "India";
   const state = location === "Mumbai" ? "Maharashtra"
               : location === "New Delhi" ? "Delhi"
               : location === "Chennai" ? "Tamil Nadu"
               : location === "Bengaluru" ? "Karnataka"
-              : "West Bengal";
+              : location === "Bhopal" ? "Madhya Pradesh"
+              : location === "Vellore" ? "Tamil Nadu"
+              : location === "Pune" ? "Maharashtra"
+              : location === "Hyderabad" ? "Telangana"
+              : "";
 
   return {
     name: name || query,
