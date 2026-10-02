@@ -32,8 +32,12 @@ const COMPARE_ROWS = [
   { key: "highest_ctc",    label: "Highest CTC",      icon: TrendingUp,  render: (c) => c.placements?.[0]?.highest_ctc ? `${c.placements[0].highest_ctc} LPA` : "—" },
   { key: "placement_pct",  label: "Placement %",      icon: BarChart2,   render: (c) => c.placements?.[0]?.placement_percentage ? `${c.placements[0].placement_percentage}%` : "—", highlight: true },
   { key: "top_recruiters", label: "Top Recruiters",   icon: Users,       render: (c) => {
-    const recs = c.placements?.[0]?.top_recruiters;
-    if (!recs?.length) return "—";
+    let recs = c.placements?.[0]?.top_recruiters;
+    if (!recs) return "—";
+    if (typeof recs === "string") {
+      recs = recs.split(",").map(r => r.trim()).filter(Boolean);
+    }
+    if (!Array.isArray(recs) || !recs.length) return "—";
     return recs.slice(0, 3).join(", ") + (recs.length > 3 ? ` +${recs.length - 3}` : "");
   }},
   { key: "courses_count",  label: "Courses Offered",  icon: BookOpen,    render: (c) => c.courses?.length ? `${c.courses.length} courses` : "—" },

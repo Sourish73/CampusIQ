@@ -310,18 +310,23 @@ function OverviewTab({ college }) {
               <PlacementRow label="Average CTC" value={`${college.placements[0].average_ctc} LPA`} />
               <PlacementRow label="Highest CTC" value={`${college.placements[0].highest_ctc} LPA`} />
               <PlacementRow label="Placement %" value={`${college.placements[0].placement_percentage}%`} />
-              {Array.isArray(college.placements[0].top_recruiters) && (
-                <div className="pt-2 border-t border-amber-100">
-                  <p className="text-xs text-[var(--text-muted)] mb-2">Top Recruiters</p>
-                  <div className="flex flex-wrap gap-1.5">
-                    {college.placements[0].top_recruiters.slice(0, 6).map((r) => (
-                      <span key={r} className="text-[10px] px-2 py-0.5 rounded-md bg-brand-50 text-brand-800 border border-brand-200">
-                        {r}
-                      </span>
-                    ))}
+              {(() => {
+                const rawRecs = college.placements[0].top_recruiters;
+                const recs = Array.isArray(rawRecs) ? rawRecs : (typeof rawRecs === 'string' ? rawRecs.split(',').map(s=>s.trim()).filter(Boolean) : []);
+                if (!recs.length) return null;
+                return (
+                  <div className="pt-2 border-t border-amber-100">
+                    <p className="text-xs text-[var(--text-muted)] mb-2">Top Recruiters</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {recs.slice(0, 6).map((r) => (
+                        <span key={r} className="text-[10px] px-2 py-0.5 rounded-md bg-brand-50 text-brand-800 border border-brand-200">
+                          {r}
+                        </span>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
           </div>
         )}
@@ -452,20 +457,25 @@ function PlacementsTab({ placements = [] }) {
             </p>
           )}
 
-          {Array.isArray(p.top_recruiters) && p.top_recruiters.length > 0 && (
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-3">
-                Top Recruiters
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {p.top_recruiters.map((r) => (
-                  <span key={r} className="px-3 py-1.5 rounded-lg bg-brand-50 text-brand-800 text-xs font-medium border border-brand-200">
-                    {r}
-                  </span>
-                ))}
+          {(() => {
+            const rawRecs = p.top_recruiters;
+            const recs = Array.isArray(rawRecs) ? rawRecs : (typeof rawRecs === 'string' ? rawRecs.split(',').map(s=>s.trim()).filter(Boolean) : []);
+            if (!recs.length) return null;
+            return (
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-3">
+                  Top Recruiters
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {recs.map((r) => (
+                    <span key={r} className="px-3 py-1.5 rounded-lg bg-brand-50 text-brand-800 text-xs font-medium border border-brand-200">
+                      {r}
+                    </span>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       ))}
     </div>
