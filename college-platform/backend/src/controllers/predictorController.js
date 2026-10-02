@@ -50,7 +50,6 @@ const predictColleges = async (req, res) => {
   const sql = `
     SELECT
       c.id AS cutoff_id,
-      c.college_name AS cutoff_college_name,
       c.exam_name,
       c.course_name,
       c.degree_type,
@@ -59,11 +58,11 @@ const predictColleges = async (req, res) => {
       c.closing_rank,
       c.year,
       c.round,
-      COALESCE(co.name, c.college_name) AS college_name,
+      co.name AS college_name,
       co.id AS college_id,
-      COALESCE(co.location, c.location) AS location,
-      COALESCE(co.state, c.state) AS state,
-      COALESCE(co.college_type, c.college_type) AS college_type,
+      co.location AS location,
+      co.state AS state,
+      co.college_type AS college_type,
       co.rating,
       co.established_year,
       co.affiliation,
@@ -73,8 +72,8 @@ const predictColleges = async (req, res) => {
       co.overview,
       co.image_url
     FROM cutoffs c
-    LEFT JOIN colleges co
-      ON co.id = c.college_id OR (c.college_name IS NOT NULL AND LOWER(TRIM(co.name)) = LOWER(TRIM(c.college_name)))
+    INNER JOIN colleges co
+      ON co.id = c.college_id
     WHERE ${clauses.join(" AND ")}
     ORDER BY c.closing_rank ASC, c.year DESC
     LIMIT 50

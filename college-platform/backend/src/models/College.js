@@ -73,6 +73,14 @@ const College = sequelize.define(
       type: DataTypes.STRING(500),
       allowNull: true,
     },
+    courses: {
+      type: DataTypes.JSONB,
+      defaultValue: [],
+    },
+    placements: {
+      type: DataTypes.JSONB,
+      defaultValue: [],
+    },
   },
   {
     tableName: "colleges",

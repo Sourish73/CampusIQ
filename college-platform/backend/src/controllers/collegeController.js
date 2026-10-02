@@ -2,7 +2,7 @@
 "use strict";
 
 const { Op } = require("sequelize");
-const { College, Course, Placement, Cutoff, Review, SavedItem, User } = require("../models");
+const { College, Cutoff, Review, SavedItem, User } = require("../models");
 const {
   fetchCollegeFromGroq,
   fetchCollegeSummary,
@@ -144,22 +144,7 @@ const getColleges = async (req, res) => {
 
     const { count, rows } = await College.findAndCountAll({
       where,
-      include: [
-        {
-          model: Course,
-          as: "courses",
-          attributes: ["id", "name", "fees", "duration", "degree_type"],
-          separate: false,
-        },
-        {
-          model: Placement,
-          as: "placements",
-          attributes: ["year", "average_ctc", "highest_ctc", "placement_percentage"],
-          limit: 1,
-          order: [["year", "DESC"]],
-          separate: true, 
-        },
-      ],
+      
       limit: limitNum,
       offset,
       order: [
@@ -190,17 +175,6 @@ const getCollegeById = async (req, res) => {
     const { id } = req.params;
 
     const includeList = [
-      {
-        model: Course,
-        as: "courses",
-        attributes: { exclude: ["createdAt", "updatedAt"] },
-      },
-      {
-        model: Placement,
-        as: "placements",
-        attributes: { exclude: ["createdAt", "updatedAt"] },
-        order: [["year", "DESC"]],
-      },
       {
         model: Cutoff,
         as: "cutoffs",
@@ -299,23 +273,7 @@ const compareColleges = async (req, res) => {
 
     const colleges = await College.findAll({
       where: { id: { [Op.in]: idArray } },
-      include: [
-        {
-          model: Course,
-          as: "courses",
-          attributes: ["name", "fees", "duration", "degree_type"],
-          separate: true,
-          limit: 5,
-        },
-        {
-          model: Placement,
-          as: "placements",
-          attributes: ["year", "average_ctc", "highest_ctc", "placement_percentage", "top_recruiters"],
-          separate: true,
-          limit: 1,
-          order: [["year", "DESC"]],
-        },
-      ],
+      
     });
 
     return res.status(200).json({
@@ -341,16 +299,7 @@ const getSavedItems = async (req, res) => {
           model: College,
           as: "college",
           attributes: ["id", "name", "location", "state", "rating", "college_type", "image_url", "naac_grade"],
-          include: [
-            {
-              model: Placement,
-              as: "placements",
-              attributes: ["average_ctc", "highest_ctc", "placement_percentage", "year"],
-              separate: true,
-              limit: 1,
-              order: [["year", "DESC"]],
-            },
-          ],
+          
         },
       ],
       order: [["createdAt", "DESC"]],
@@ -460,14 +409,6 @@ const findCollegeInDatabase = async ({ rawQuery = "" }) => {
 };
  
 const fullCollegeIncludes = [
-  { model: Course, as: "courses", attributes: { exclude: ["createdAt", "updatedAt"] } },
-  {
-    model: Placement,
-    as: "placements",
-    attributes: { exclude: ["createdAt", "updatedAt"] },
-    separate: true,
-    order: [["year", "DESC"]],
-  },
   {
     model: Cutoff,
     as: "cutoffs",
@@ -511,13 +452,13 @@ const saveGroqCollege = async (groqData, collegeId = null) => {
       website: groqData.website || null,
       image_url: groqData.image_url || "",
       overview: groqData.overview || null,
+      courses: groqData.courses || [],
+      placements: groqData.placements || [],
     };
 
     let college;
     if (isUpdate) {
       await Promise.all([
-        Course.destroy({ where: { college_id: collegeId }, transaction: t }),
-        Placement.destroy({ where: { college_id: collegeId }, transaction: t }),
         Cutoff.destroy({ where: { college_id: collegeId }, transaction: t }),
         Review.destroy({ where: { college_id: collegeId }, transaction: t }),
       ]);
@@ -529,42 +470,6 @@ const saveGroqCollege = async (groqData, collegeId = null) => {
     }
 
     const college_id = college.id;
-
-    if (Array.isArray(groqData.courses) && groqData.courses.length) {
-      await Course.bulkCreate(
-        groqData.courses
-          .filter((course) => course?.name)
-          .map((course) => ({
-            name: course.name,
-            duration: course.duration || null,
-            fees: numberOrNull(course.fees),
-            fees_per_year: numberOrNull(course.fees_per_year),
-            degree_type: allowedDegreeTypes.has(course.degree_type) ? course.degree_type : "UG",
-            specialisation: course.specialisation || null,
-            seats_available: intOrNull(course.seats_available),
-            college_id,
-          })),
-        { transaction: t }
-      );
-    }
-
-    if (Array.isArray(groqData.placements) && groqData.placements.length) {
-      await Placement.bulkCreate(
-        groqData.placements
-          .filter((placement) => intOrNull(placement?.year))
-          .map((placement) => ({
-            year: intOrNull(placement.year),
-            average_ctc: numberOrNull(placement.average_ctc),
-            median_ctc: numberOrNull(placement.median_ctc),
-            highest_ctc: numberOrNull(placement.highest_ctc),
-            placement_percentage: numberOrNull(placement.placement_percentage),
-            top_recruiters: Array.isArray(placement.top_recruiters) ? placement.top_recruiters.join(", ") : placement.top_recruiters || null,
-            total_offers: intOrNull(placement.total_offers),
-            college_id,
-          })),
-        { transaction: t }
-      );
-    }
 
     if (Array.isArray(groqData.cutoffs) && groqData.cutoffs.length) {
       await Cutoff.bulkCreate(

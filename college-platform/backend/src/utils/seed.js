@@ -94,14 +94,10 @@ async function ensureSchema() {
     CREATE TABLE IF NOT EXISTS cutoffs (
       id SERIAL PRIMARY KEY,
       college_id INTEGER NULL REFERENCES colleges(id) ON DELETE SET NULL,
-      college_name VARCHAR(255),
-      location VARCHAR(150),
-      state VARCHAR(100),
-      college_type VARCHAR(50),
-      exam_name VARCHAR(50) NOT NULL,
+      exam_name VARCHAR(120) NOT NULL,
       course_name VARCHAR(255),
-      degree_type VARCHAR(50),
-      category VARCHAR(20) DEFAULT 'General',
+      degree_type VARCHAR(120),
+      category VARCHAR(120) DEFAULT 'General',
       opening_rank INTEGER,
       closing_rank INTEGER NOT NULL,
       year INTEGER NOT NULL,
@@ -110,23 +106,11 @@ async function ensureSchema() {
       updated_at TIMESTAMPTZ DEFAULT NOW()
     );
 
-    ALTER TABLE cutoffs ADD COLUMN IF NOT EXISTS college_name VARCHAR(255);
-    ALTER TABLE cutoffs ADD COLUMN IF NOT EXISTS location VARCHAR(150);
-    ALTER TABLE cutoffs ADD COLUMN IF NOT EXISTS state VARCHAR(100);
-    ALTER TABLE cutoffs ADD COLUMN IF NOT EXISTS college_type VARCHAR(50);
-    ALTER TABLE cutoffs ADD COLUMN IF NOT EXISTS degree_type VARCHAR(50);
-    ALTER TABLE cutoffs ALTER COLUMN college_id DROP NOT NULL;
-    ALTER TABLE cutoffs ALTER COLUMN category TYPE VARCHAR(20) USING category::text;
-    ALTER TABLE colleges ALTER COLUMN college_type TYPE VARCHAR(50) USING college_type::text;
-    ALTER TABLE cutoffs ALTER COLUMN exam_name TYPE VARCHAR(120);
-    ALTER TABLE cutoffs ALTER COLUMN college_type TYPE VARCHAR(120);
-    ALTER TABLE cutoffs ALTER COLUMN degree_type TYPE VARCHAR(120);
-    ALTER TABLE cutoffs ALTER COLUMN category TYPE VARCHAR(120);
-    ALTER TABLE colleges ALTER COLUMN college_type TYPE VARCHAR(120);
+    ALTER TABLE colleges ALTER COLUMN college_type TYPE VARCHAR(120) USING college_type::text;
 
     CREATE UNIQUE INDEX IF NOT EXISTS colleges_name_unique_idx ON colleges (LOWER(TRIM(name)));
-    CREATE UNIQUE INDEX IF NOT EXISTS cutoffs_natural_unique_idx
-      ON cutoffs (LOWER(TRIM(COALESCE(college_name, ''))), exam_name, COALESCE(course_name, ''), category, COALESCE(opening_rank, 0), closing_rank, year);
+    CREATE INDEX IF NOT EXISTS idx_cutoffs_college_id ON cutoffs(college_id);
+    CREATE INDEX IF NOT EXISTS idx_cutoffs_rank_cat ON cutoffs(category, closing_rank);
   `);
 }
 
@@ -174,22 +158,19 @@ async function seedCutoffs(rows) {
       pool.query(
         `
           INSERT INTO cutoffs (
-            id, college_id, college_name, location, state, college_type,
+            id, college_id,
             exam_name, course_name, degree_type, category, opening_rank, closing_rank, year, created_at, updated_at
           )
           VALUES (
             $1,
             (SELECT id FROM colleges WHERE LOWER(TRIM(name)) = LOWER(TRIM($2)) LIMIT 1),
-            $2,$3,$4,$5,$6,$7,$8,COALESCE($9, 'General'),$10,$11,$12,NOW(),NOW()
+            $3,$4,$5,COALESCE($6, 'General'),$7,$8,$9,NOW(),NOW()
           )
           ON CONFLICT DO NOTHING
         `,
         [
           intOrNull(row.cutoff_id),
           textOrNull(row.college_name),
-          textOrNull(row.location),
-          textOrNull(row.state),
-          normalizeCollegeType(row.college_type),
           textOrNull(row.exam_name),
           textOrNull(row.course_name),
           textOrNull(row.degree_type),
