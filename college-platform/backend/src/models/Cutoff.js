@@ -18,22 +18,6 @@ const Cutoff = sequelize.define(
       references: { model: "colleges", key: "id" },
       onDelete: "CASCADE",
     },
-    college_name: {
-      type: DataTypes.STRING(255),
-      allowNull: true,
-    },
-    location: {
-      type: DataTypes.STRING(150),
-      allowNull: true,
-    },
-    state: {
-      type: DataTypes.STRING(100),
-      allowNull: true,
-    },
-    college_type: {
-      type: DataTypes.STRING(50),
-      allowNull: true,
-    },
     exam_name: {
       type: DataTypes.STRING(50),
       allowNull: false,
